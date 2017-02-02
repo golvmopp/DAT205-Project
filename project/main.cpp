@@ -76,6 +76,9 @@ mat4 roomModelMatrix;
 mat4 landingPadModelMatrix; 
 mat4 fighterModelMatrix;
 
+mat4 shipTranslation = translate(vec3(0.f, 10.f, 0.f));
+mat4 shipRotation = mat4(1.0f);
+
 void loadShaders(bool is_reload)
 {
 	GLuint shader = labhelper::loadShaderProgram("simple.vert", "simple.frag", is_reload);
@@ -196,7 +199,8 @@ void display(void)
 	// setup matrices
 	///////////////////////////////////////////////////////////////////////////
 	mat4 projMatrix = perspective(radians(45.0f), float(windowWidth) / float(windowHeight), 5.0f, 2000.0f);
-	mat4 viewMatrix = lookAt(cameraPosition, cameraPosition + cameraDirection, worldUp);
+	//cameraPosition = vec3(shipTranslation * translate(vec3(0.f, 15.f, 0.f)) * shipRotation * vec4(1.f));
+	mat4 viewMatrix = lookAt(cameraPosition, vec3(shipTranslation[3]), worldUp);
 
 	vec4 lightStartPosition = vec4(40.0f, 40.0f, 0.0f, 1.0f);
 	lightPosition = vec3(rotate(currentTime, worldUp) * lightStartPosition);
@@ -265,6 +269,27 @@ bool handleEvents(void)
 	const uint8_t *state = SDL_GetKeyboardState(nullptr);
 	vec3 cameraRight = cross(cameraDirection, worldUp);
 
+	///////////////////// NEW STEERING
+	float rotspeed	= .03f;
+	float gospeed	= 1.0f;
+	
+	if (state[SDL_SCANCODE_RIGHT]) {
+		shipRotation[0] += rotspeed * shipRotation[2];
+	}
+	if (state[SDL_SCANCODE_LEFT]) {
+		shipRotation[0] -= rotspeed * shipRotation[2];
+	}
+
+	shipRotation[0] = normalize(shipRotation[0]);
+	shipRotation[2] = vec4(cross(vec3(shipRotation[0]), vec3(shipRotation[1])), 0.0f);
+
+	if (state[SDL_SCANCODE_UP]) {
+		shipTranslation[3] -= gospeed * shipRotation[0];
+	}
+ 
+	fighterModelMatrix = shipTranslation * shipRotation;
+	////////////////////// END  NEW STEERING
+
 	if (state[SDL_SCANCODE_W]) {
 		cameraPosition += cameraSpeed* cameraDirection;
 	}
@@ -283,6 +308,7 @@ bool handleEvents(void)
 	if (state[SDL_SCANCODE_E]) {
 		cameraPosition += cameraSpeed * worldUp;
 	}
+
 	return quitEvent;
 }
 
