@@ -1,3 +1,4 @@
+
 # Ignore some of the files that VS uses locally
 *.pdb
 *.vcxproj.user
@@ -35,3 +36,33 @@ bin/*.ilk
 build/
 */bin/
 .ycm_extra_conf.py*
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
