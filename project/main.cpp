@@ -211,6 +211,12 @@ void display(void)
 	mat4 lightViewMatrix = lookAt(lightPosition, vec3(0.0f), worldUp);
 	mat4 lightProjMatrix = perspective(radians(45.0f), 1.0f, 25.0f, 100.0f);
 
+
+	///////////////////////////////////////////////////////////////////////////
+	// Movement updates
+	///////////////////////////////////////////////////////////////////////////
+	shipTranslation[3] -= speed * shipRotation[0]; //speed update
+
 	///////////////////////////////////////////////////////////////////////////
 	// Bind the environment map(s) to unused texture units
 	///////////////////////////////////////////////////////////////////////////
@@ -276,7 +282,7 @@ bool handleEvents(void)
 	///////////////////// NEW STEERING
 	float rotspeed	= .05f;
 	float gospeed	= 2.0f;
-	float godspeed = 3.0f;
+	float godspeed = 4.0f;
 	
 	if (state[SDL_SCANCODE_RIGHT]) {
 		shipRotation[0] += rotspeed * shipRotation[2];
@@ -289,11 +295,21 @@ bool handleEvents(void)
 	shipRotation[2] = vec4(cross(vec3(shipRotation[0]), vec3(shipRotation[1])), 0.0f);
 
 	if (state[SDL_SCANCODE_UP]) {
-		shipTranslation[3] -= gospeed * shipRotation[0];
+		if (speed <= 10.f) {
+			speed += 0.05f*gospeed;
+		}
+	} 
+	else if (state[SDL_SCANCODE_B]) {
+		if (speed <= 13.f) {
+			speed += 0.05f*godspeed;
+		}
+
 	}
  
 	if (state[SDL_SCANCODE_DOWN]) {
-		shipTranslation[3] += 0.7f*gospeed * shipRotation[0];
+		if (speed >= -5.f) {
+			speed -= 0.05f*gospeed;
+		}
 	}
 
 	fighterModelMatrix = shipTranslation * shipRotation;
