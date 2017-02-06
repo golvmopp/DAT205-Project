@@ -32,6 +32,7 @@ float previousTime = 0.0f;
 float deltaTime    = 0.0f;
 bool showUI = false;
 int windowWidth, windowHeight;
+float speed = 0.0f;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Shader programs
@@ -199,7 +200,10 @@ void display(void)
 	// setup matrices
 	///////////////////////////////////////////////////////////////////////////
 	mat4 projMatrix = perspective(radians(45.0f), float(windowWidth) / float(windowHeight), 5.0f, 2000.0f);
-	//cameraPosition = vec3(shipTranslation * translate(vec3(0.f, 15.f, 0.f)) * shipRotation * vec4(1.f));
+	vec4 ref = vec4(60.f, 30.f, 0.f, 1.f);
+	vec4 tref = shipRotation * ref;
+	cameraPosition = vec3(tref + shipTranslation[3]);
+
 	mat4 viewMatrix = lookAt(cameraPosition, vec3(shipTranslation[3]), worldUp);
 
 	vec4 lightStartPosition = vec4(40.0f, 40.0f, 0.0f, 1.0f);
@@ -270,8 +274,9 @@ bool handleEvents(void)
 	vec3 cameraRight = cross(cameraDirection, worldUp);
 
 	///////////////////// NEW STEERING
-	float rotspeed	= .03f;
-	float gospeed	= 1.0f;
+	float rotspeed	= .05f;
+	float gospeed	= 2.0f;
+	float godspeed = 3.0f;
 	
 	if (state[SDL_SCANCODE_RIGHT]) {
 		shipRotation[0] += rotspeed * shipRotation[2];
@@ -287,6 +292,10 @@ bool handleEvents(void)
 		shipTranslation[3] -= gospeed * shipRotation[0];
 	}
  
+	if (state[SDL_SCANCODE_DOWN]) {
+		shipTranslation[3] += 0.7f*gospeed * shipRotation[0];
+	}
+
 	fighterModelMatrix = shipTranslation * shipRotation;
 	////////////////////// END  NEW STEERING
 
