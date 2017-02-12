@@ -59,12 +59,50 @@ layout(location = 0) out vec4 fragmentColor;
 
 vec3 calculateDirectIllumiunation(vec3 wo, vec3 n)
 {
-	return vec3(material_color);
+	float d = distance(viewSpaceLightPosition, viewSpacePosition);
+	vec3 Li = point_light_intensity_multiplier * point_light_color / pow(d, 2.0);
+	vec3 wi = normalize(viewSpaceLightPosition - viewSpacePosition);
+	if (dot(n, wi) <= 0.0) {
+		return vec3(0.0, 0.0, 0.0);
+	}
+	vec3 diffuse_term = material_color * (1.0 / PI) * abs(dot(n, wi)) * Li;
+	float F = material_fresnel + (1 - material_fresnel) * pow(1 - dot(n, wi), 5.0);
+	vec3 wh = normalize(wi + wo);
+	float D = (material_shininess + 2) * pow(dot(n, wh), material_shininess) / (2 * PI);
+	float G = min(1, min(2 * dot(n, wh)*dot(n, wo) / dot(wo, wh), 2 * dot(n, wh)*dot(n, wi) / dot(wo, wh)));
+	float brdf = F * D * G / (4 * dot(n, wo) * dot(n, wi));
+	vec3 dielectric_term = brdf * dot(n, wi) * Li + (1 - F) * diffuse_term;
+	vec3 metal_term = brdf * material_color * dot(n, wi) * Li;
+	vec3 microfacet_term = material_metalness * metal_term + (1 - material_metalness) * dielectric_term;
+	return material_reflectivity * microfacet_term + (1 - material_reflectivity) * diffuse_term;
+
 }
 
 vec3 calculateIndirectIllumination(vec3 wo, vec3 n)
 {
-	return vec3(0.0);
+	vec3 worldSpaceNormal = vec3(viewInverse * vec4(n, 0.0));
+	vec3 dir = worldSpaceNormal;
+	float theta = acos(max(-1.0f, min(1.0f, dir.y)));
+	float phi = atan(dir.z, dir.x);
+	if (phi < 0.0f) phi = phi + 2.0f * PI;
+	vec2 lookup = vec2(phi / (2.0 * PI), theta / PI);
+	vec4 irradience = environment_multiplier * texture(irradianceMap, lookup);
+	vec3 diffuse_term = material_color * (1.0 / PI) * vec3(irradience);
+
+	vec3 wi = vec3(viewInverse * vec4(reflect(-wo, n), 0.0));
+	dir = wi;
+	theta = acos(max(-1.0f, min(1.0f, dir.y)));
+	phi = atan(dir.z, dir.x);
+	if (phi < 0.0f) phi = phi + 2.0f * PI;
+	lookup = vec2(phi / (2.0 * PI), theta / PI);
+	float roughness = sqrt(sqrt(2 / (material_shininess + 2)));
+	vec3 Li = environment_multiplier * textureLod(reflectionMap, lookup, roughness * 7.0).xyz;
+	float F = material_fresnel + (1 - material_fresnel) * pow(1 - dot(worldSpaceNormal, wi), 5.0);
+	vec3 dielectric_term = F * Li + (1 - F) * diffuse_term;
+	vec3 metal_term = F * material_color * Li;
+	vec3 microfacet_term = material_metalness * metal_term + (1 - material_metalness) * dielectric_term;
+	return material_reflectivity * microfacet_term + (1 - material_reflectivity) * diffuse_term;
+
 }
 
 void main() 
