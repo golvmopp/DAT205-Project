@@ -145,14 +145,17 @@
   <ItemGroup>
     <None Include="background.frag" />
     <None Include="background.vert" />
+    <None Include="cutoff.frag" />
     <None Include="heightfield.frag" />
     <None Include="heightfield.vert" />
+    <None Include="horizontal_blur.frag" />
     <None Include="postFX.frag" />
     <None Include="postFX.vert" />
     <None Include="shading.frag" />
     <None Include="shading.vert" />
     <None Include="simple.frag" />
     <None Include="simple.vert" />
+    <None Include="vertical_blur.frag" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\labhelper\labhelper.vcxproj">
