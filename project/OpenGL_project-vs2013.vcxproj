@@ -147,6 +147,8 @@
     <None Include="background.vert" />
     <None Include="heightfield.frag" />
     <None Include="heightfield.vert" />
+    <None Include="postFX.frag" />
+    <None Include="postFX.vert" />
     <None Include="shading.frag" />
     <None Include="shading.vert" />
     <None Include="simple.frag" />

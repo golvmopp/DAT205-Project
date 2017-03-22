@@ -23,6 +23,7 @@ using namespace glm;
 using std::min;
 using std::max;
 
+
 ///////////////////////////////////////////////////////////////////////////////
 // Various globals
 ///////////////////////////////////////////////////////////////////////////////
@@ -34,12 +35,16 @@ bool showUI = false;
 int windowWidth, windowHeight;
 float speed = 0.0f;
 
+std::vector<FboInfo> fboList;
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // Shader programs
 ///////////////////////////////////////////////////////////////////////////////
 GLuint shaderProgram; // Shader for rendering the final image
 GLuint simpleShaderProgram; // Shader used to draw the shadow map
 GLuint backgroundProgram;
+GLuint postFXshader; //Shader for post processing effects
 
 ///////////////////////////////////////////////////////////////////////////////
 // Environment
@@ -88,7 +93,7 @@ void loadShaders(bool is_reload)
 	if (shader != 0) backgroundProgram = shader;
 	shader = labhelper::loadShaderProgram("shading.vert", "shading.frag", is_reload);
 	if (shader != 0) shaderProgram = shader;
-}
+	}
 
 void initGL()
 {
@@ -98,12 +103,13 @@ void initGL()
 	backgroundProgram = labhelper::loadShaderProgram("background.vert", "background.frag");
 	shaderProgram = labhelper::loadShaderProgram("shading.vert", "shading.frag");
 	simpleShaderProgram = labhelper::loadShaderProgram("simple.vert", "simple.frag");
+	postFXshader = labhelper::loadShaderProgram("postFX.vert", "postFX.frag");
 
 	///////////////////////////////////////////////////////////////////////
 	// Load models and set up model matrices
 	///////////////////////////////////////////////////////////////////////
 	fighterModel = labhelper::loadModelFromOBJ("../scenes/NewShip.obj");
-	landingpadModel = labhelper::loadModelFromOBJ("../scenes/landingpad.obj");
+	landingpadModel = labhelper::loadModelFromOBJ(	"../scenes/landingpad.obj");
 	sphereModel = labhelper::loadModelFromOBJ("../scenes/sphere.obj");
 
 	roomModelMatrix = mat4(1.0f);
@@ -122,6 +128,15 @@ void initGL()
 	environmentMap = labhelper::loadHdrTexture("../scenes/envmaps/" + envmap_base_name + ".hdr");
 	irradianceMap = labhelper::loadHdrTexture("../scenes/envmaps/" + envmap_base_name + "_irradiance.hdr");
 
+	///////////////////////////////////////////////////////////////////////
+	// Setup Framebuffer
+	///////////////////////////////////////////////////////////////////////
+	int w, h;
+	SDL_GetWindowSize(g_window, &w, &h);
+	for (int i = 0; i < 5; i++) {
+		fboList.push_back(FboInfo());
+		fboList[i].resize(w,h);
+	}
 
 	glEnable(GL_DEPTH_TEST);	// enable Z-buffering 
 	glEnable(GL_CULL_FACE);		// enables backface culling
@@ -193,6 +208,7 @@ void display(void)
 		if (w != windowWidth || h != windowHeight) {
 			windowWidth = w;
 			windowHeight = h;
+			//Maybe need to update FBO sizes, or is this handled already?
 		}
 	}
 
@@ -231,7 +247,7 @@ void display(void)
 	///////////////////////////////////////////////////////////////////////////
 	// Draw from camera
 	///////////////////////////////////////////////////////////////////////////
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, fboList[0].framebufferId);
 	glViewport(0, 0, windowWidth, windowHeight);
 	glClearColor(0.2, 0.2, 0.8, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -240,7 +256,16 @@ void display(void)
 	drawScene(shaderProgram, viewMatrix, projMatrix, lightViewMatrix, lightProjMatrix);
 	debugDrawLight(viewMatrix, projMatrix, vec3(lightPosition));
 
+	///////////////////////////////////////////////////////////////////////////
+	// Post Processing Passes
+	///////////////////////////////////////////////////////////////////////////
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glUseProgram(postFXshader);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, fboList[0].colorTextureTargets[0]);
 
+	labhelper::drawFullScreenQuad();
+	
 }
 
 bool handleEvents(void)
