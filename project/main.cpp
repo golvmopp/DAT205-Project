@@ -147,9 +147,7 @@ void initGL()
 
 
 
-	vec4 ref = vec4(60.f, 25.f, 0.f, 1.f);
-	vec4 tref = shipRotation * ref;
-	cameraPosition = vec3(tref + shipTranslation[3]);
+	
 
 	glEnable(GL_DEPTH_TEST);	// enable Z-buffering 
 	glEnable(GL_CULL_FACE);		// enables backface culling
@@ -231,6 +229,10 @@ void display(void)
 	mat4 projMatrix = perspective(radians(45.0f), float(windowWidth) / float(windowHeight), 5.0f, 2000.0f);
 
 	mat4 viewMatrix = lookAt(cameraPosition, vec3(shipTranslation[3])*vec3(1.0f,1.5f,1.f), worldUp);
+	
+	vec4 ref = vec4(60.f, 25.f, 0.f, 1.f);
+	vec4 tref = shipRotation * ref;
+	cameraPosition = vec3(tref + shipTranslation[3]);
 
 	vec4 lightStartPosition = vec4(40.0f, 40.0f, 0.0f, 1.0f);
 	lightPosition = vec3(rotate(currentTime, worldUp) * lightStartPosition);
@@ -403,6 +405,10 @@ bool handleEvents(void)
 			}
 		}
 		
+	}
+
+	if (state[SDL_SCANCODE_LCTRL]) {
+
 	}
 
 	if (state[SDL_SCANCODE_LSHIFT]) {
