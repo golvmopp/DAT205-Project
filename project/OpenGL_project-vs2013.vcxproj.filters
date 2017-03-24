@@ -16,36 +16,46 @@
     <ClInclude Include="ParticleSystem.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="background.frag" />
-    <None Include="background.vert" />
     <None Include="cutoff.frag" />
-    <None Include="heightfield.frag" />
-    <None Include="heightfield.vert" />
-    <None Include="horizontal_blur.frag" />
     <None Include="postFX.frag">
-      <Filter>Test</Filter>
+      <Filter>Shaders</Filter>
     </None>
     <None Include="postFX.vert">
-      <Filter>Test</Filter>
+      <Filter>Shaders</Filter>
     </None>
     <None Include="shading.frag">
-      <Filter>Test</Filter>
+      <Filter>Shaders</Filter>
     </None>
     <None Include="shading.vert">
-      <Filter>Test</Filter>
+      <Filter>Shaders</Filter>
     </None>
     <None Include="simple.frag">
-      <Filter>Test</Filter>
+      <Filter>Shaders</Filter>
     </None>
     <None Include="simple.vert">
-      <Filter>Test</Filter>
+      <Filter>Shaders</Filter>
     </None>
     <None Include="vertical_blur.frag">
-      <Filter>Test</Filter>
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="background.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="background.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="heightfield.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="heightfield.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="horizontal_blur.frag">
+      <Filter>Shaders</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="Test">
+    <Filter Include="Shaders">
       <UniqueIdentifier>{8119e029-db2c-47ce-9699-92dfb289ad4f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
