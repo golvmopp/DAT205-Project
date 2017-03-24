@@ -16,7 +16,6 @@
     <ClInclude Include="ParticleSystem.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="cutoff.frag" />
     <None Include="postFX.frag">
       <Filter>Shaders</Filter>
     </None>
@@ -51,6 +50,9 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="horizontal_blur.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="cutoff.frag">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>
