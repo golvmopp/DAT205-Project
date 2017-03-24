@@ -140,6 +140,7 @@
     <ClCompile Include="hdr.cpp" />
     <ClCompile Include="heightfield.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="movControl.cpp" />
     <ClCompile Include="ParticleSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -165,6 +166,7 @@
   <ItemGroup>
     <ClInclude Include="fbo.h" />
     <ClInclude Include="hdr.h" />
+    <ClInclude Include="movControl.h" />
     <ClInclude Include="heightfield.h" />
     <ClInclude Include="ParticleSystem.h" />
   </ItemGroup>

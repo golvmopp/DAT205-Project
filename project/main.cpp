@@ -147,6 +147,9 @@ void initGL()
 
 
 
+	vec4 ref = vec4(60.f, 25.f, 0.f, 1.f);
+	vec4 tref = shipRotation * ref;
+	cameraPosition = vec3(tref + shipTranslation[3]);
 
 	glEnable(GL_DEPTH_TEST);	// enable Z-buffering 
 	glEnable(GL_CULL_FACE);		// enables backface culling
@@ -226,9 +229,6 @@ void display(void)
 	// setup matrices
 	///////////////////////////////////////////////////////////////////////////
 	mat4 projMatrix = perspective(radians(45.0f), float(windowWidth) / float(windowHeight), 5.0f, 2000.0f);
-	vec4 ref = vec4(60.f, 25.f, 0.f, 1.f);
-	vec4 tref = shipRotation * ref;
-	cameraPosition = vec3(tref + shipTranslation[3]);
 
 	mat4 viewMatrix = lookAt(cameraPosition, vec3(shipTranslation[3])*vec3(1.0f,1.5f,1.f), worldUp);
 
@@ -324,7 +324,7 @@ bool handleEvents(void)
 		if (event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_r) {
 			loadShaders(true);
 		}
-		if (event.type == SDL_MOUSEMOTION && !ImGui::IsMouseHoveringAnyWindow()) {
+		if (event.type == SDL_MOUSEMOTION && !ImGui::IsMouseHoveringAnyWindow()) { //Doesn't work since camera now locked behind vehicle
 			static int prev_xcoord = event.motion.x;
 			static int prev_ycoord = event.motion.y;
 			int delta_x = event.motion.x - prev_xcoord;
@@ -350,11 +350,24 @@ bool handleEvents(void)
 	float gospeed	= 2.0f;
 	float godspeed = 4.0f;
 	
-	if (state[SDL_SCANCODE_RIGHT]) {
-		shipRotation[0] += rotspeed * shipRotation[2];
-	}
-	if (state[SDL_SCANCODE_LEFT]) {
-		shipRotation[0] -= rotspeed * shipRotation[2];
+	if (speed != 0) {
+		if (state[SDL_SCANCODE_RIGHT]) {
+			if (speed > 5) {
+				shipRotation[0] += rotspeed * shipRotation[2];
+			}
+			else {
+				shipRotation[0] += (rotspeed*0.2f*speed) * shipRotation[2];
+			}
+		}
+		if (state[SDL_SCANCODE_LEFT]) {
+			if (speed > 5) {
+				shipRotation[0] -= rotspeed * shipRotation[2];
+			}
+			else {
+				shipRotation[0] -= (rotspeed*0.2f*speed) * shipRotation[2];
+
+			}
+		}
 	}
 
 	shipRotation[0] = normalize(shipRotation[0]);
@@ -371,11 +384,29 @@ bool handleEvents(void)
 		}
 
 	}
- 
-	if (state[SDL_SCANCODE_DOWN]) {
+	else if (state[SDL_SCANCODE_DOWN]) {
 		if (speed >= -5.f) {
 			speed -= 0.05f*gospeed;
 		}
+	}
+	else {
+		if (speed > 0) {
+			speed -= 0.02f*gospeed;
+			if (speed < 0) {
+				speed = 0;
+			}
+			}
+		else if (speed < 0) {
+			speed += 0.02f*gospeed;
+			if (speed > 0) {
+				speed = 0;
+			}
+		}
+		
+	}
+
+	if (state[SDL_SCANCODE_LSHIFT]) {
+		speed = 0;
 	}
 
 	fighterModelMatrix = shipTranslation * shipRotation;
