@@ -214,30 +214,31 @@ void drawScene(GLuint currentShaderProgram, const mat4 &viewMatrix, const mat4 &
 */
 int bloom(int write) 
 {
+	glActiveTexture(GL_TEXTURE0); // Just to make sure
+
+	// Cut off light sources to blur
 	glBindFramebuffer(GL_FRAMEBUFFER, fboList[write].framebufferId);
-	glActiveTexture(GL_TEXTURE0);
 	glUseProgram(cutoffShader);
 	glBindTexture(GL_TEXTURE_2D, fboList[write - 1].colorTextureTargets[0]);
-
 	labhelper::drawFullScreenQuad();
 
 	write++;
 
+	// blur light sources horizontally
 	glBindFramebuffer(GL_FRAMEBUFFER, fboList[write].framebufferId);
 	glUseProgram(hBlurShader);
-	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, fboList[write - 1].colorTextureTargets[0]);
-
 	labhelper::drawFullScreenQuad();
 
 	write++;
 
+	// bloom light sources vertically
 	glBindFramebuffer(GL_FRAMEBUFFER, fboList[write].framebufferId);
 	glUseProgram(vBlurShader);
-	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, fboList[write - 1].colorTextureTargets[0]);
-
 	labhelper::drawFullScreenQuad();
+
+	// Return "pointer" to blurred light sources to be used as bloom effect
 	return write;
 }
 
@@ -291,7 +292,7 @@ void display(void)
 	glActiveTexture(GL_TEXTURE0);
 
 	///////////////////////////////////////////////////////////////////////////
-	// Draw from camera
+	// Draw from camera   @ This draws the base scene to the first FBO
 	///////////////////////////////////////////////////////////////////////////
 	glBindFramebuffer(GL_FRAMEBUFFER, fboList[0].framebufferId);
 	glViewport(0, 0, windowWidth, windowHeight);
@@ -305,29 +306,26 @@ void display(void)
 	///////////////////////////////////////////////////////////////////////////
 	// Post Processing Passes
 	///////////////////////////////////////////////////////////////////////////
-	int bloomResult = bloom(1); // need to be blended into the "base"
+	int bloomResult = bloom(1);
 
+	// Blending the bloom result into the base scene
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, fboList[0].framebufferId);
 	glUseProgram(postFXshader);
-	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, fboList[bloomResult].colorTextureTargets[0]);
-
 	labhelper::drawFullScreenQuad();
 
 	glDisable(GL_BLEND);
 
+	// writing the complete scene to the default FBO (screen)
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glViewport(0, 0, windowWidth, windowHeight);
-	glClearColor(0.2, 0.2, 0.8, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glUseProgram(postFXshader);
-	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, fboList[0].colorTextureTargets[0]);
-
 	labhelper::drawFullScreenQuad();
 }
 
