@@ -207,6 +207,40 @@ void drawScene(GLuint currentShaderProgram, const mat4 &viewMatrix, const mat4 &
 	labhelper::render(fighterModel);
 }
 
+/*
+	Returns which FBO in list contains the result, i.e. bloomed lights
+	write is the first FBO written to in this function. It will
+	use results from FBO #write-1 to begin with.
+*/
+int bloom(int write) 
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, fboList[write].framebufferId);
+	glActiveTexture(GL_TEXTURE0);
+	glUseProgram(cutoffShader);
+	glBindTexture(GL_TEXTURE_2D, fboList[write - 1].colorTextureTargets[0]);
+
+	labhelper::drawFullScreenQuad();
+
+	write++;
+
+	glBindFramebuffer(GL_FRAMEBUFFER, fboList[write].framebufferId);
+	glUseProgram(hBlurShader);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, fboList[write - 1].colorTextureTargets[0]);
+
+	labhelper::drawFullScreenQuad();
+
+	write++;
+
+	glBindFramebuffer(GL_FRAMEBUFFER, fboList[write].framebufferId);
+	glUseProgram(vBlurShader);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, fboList[write - 1].colorTextureTargets[0]);
+
+	labhelper::drawFullScreenQuad();
+	return write;
+}
+
 
 void display(void)
 {
@@ -271,44 +305,30 @@ void display(void)
 	///////////////////////////////////////////////////////////////////////////
 	// Post Processing Passes
 	///////////////////////////////////////////////////////////////////////////
-	glBindFramebuffer(GL_FRAMEBUFFER, fboList[1].framebufferId);
-	glUseProgram(cutoffShader);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, fboList[0].colorTextureTargets[0]);
+	int bloomResult = bloom(1); // need to be blended into the "base"
 
-	labhelper::drawFullScreenQuad();
-
-	glBindFramebuffer(GL_FRAMEBUFFER, fboList[2].framebufferId);
-	glUseProgram(hBlurShader);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, fboList[1].colorTextureTargets[0]);
-
-	labhelper::drawFullScreenQuad();
-
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 
-	glViewport(0, 0, windowWidth, windowHeight);
-	glClearColor(0.0, 0.0, 0.0, 1.0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	glUseProgram(vBlurShader);
+	glBindFramebuffer(GL_FRAMEBUFFER, fboList[0].framebufferId);
+	glUseProgram(postFXshader);
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, fboList[2].colorTextureTargets[0]);
+	glBindTexture(GL_TEXTURE_2D, fboList[bloomResult].colorTextureTargets[0]);
 
 	labhelper::drawFullScreenQuad();
 
-	
+	glDisable(GL_BLEND);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glViewport(0, 0, windowWidth, windowHeight);
+	glClearColor(0.2, 0.2, 0.8, 1.0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 	glUseProgram(postFXshader);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, fboList[0].colorTextureTargets[0]);
 
 	labhelper::drawFullScreenQuad();
-
-	glDisable(GL_BLEND);
 }
 
 bool handleEvents(void)
