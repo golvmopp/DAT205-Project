@@ -150,6 +150,7 @@
     <None Include="heightfield.frag" />
     <None Include="heightfield.vert" />
     <None Include="horizontal_blur.frag" />
+    <None Include="motion_blur.frag" />
     <None Include="postFX.frag" />
     <None Include="postFX.vert" />
     <None Include="shading.frag" />

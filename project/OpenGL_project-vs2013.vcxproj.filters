@@ -55,6 +55,9 @@
     <None Include="cutoff.frag">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="motion_blur.frag">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Shaders">
