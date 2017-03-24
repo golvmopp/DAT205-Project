@@ -88,11 +88,11 @@ mat4 shipRotation = mat4(1.0f);
 
 void loadShaders(bool is_reload)
 {
-	GLuint shader = labhelper::loadShaderProgram("Shaders/simple.vert", "Shaders/simple.frag", is_reload);
+	GLuint shader = labhelper::loadShaderProgram("simple.vert", "simple.frag", is_reload);
 	if (shader != 0) simpleShaderProgram = shader; 
-	shader = labhelper::loadShaderProgram("Shaders/background.vert", "Shaders/background.frag", is_reload);
+	shader = labhelper::loadShaderProgram("background.vert", "background.frag", is_reload);
 	if (shader != 0) backgroundProgram = shader;
-	shader = labhelper::loadShaderProgram("Shaders/shading.vert", "Shaders/shading.frag", is_reload);
+	shader = labhelper::loadShaderProgram("shading.vert", "shading.frag", is_reload);
 	if (shader != 0) shaderProgram = shader;
 	}
 
@@ -101,14 +101,14 @@ void initGL()
 	///////////////////////////////////////////////////////////////////////
 	//		Load Shaders
 	///////////////////////////////////////////////////////////////////////
-	backgroundProgram = labhelper::loadShaderProgram("Shaders/background.vert", "Shaders/background.frag");
-	shaderProgram = labhelper::loadShaderProgram("Shaders/shading.vert", "Shaders/shading.frag");
-	simpleShaderProgram = labhelper::loadShaderProgram("Shaders/simple.vert", "Shaders/simple.frag");
-	postFXshader = labhelper::loadShaderProgram("Shaders/postFX.vert", "Shaders/postFX.frag");
+	backgroundProgram = labhelper::loadShaderProgram("background.vert", "background.frag");
+	shaderProgram = labhelper::loadShaderProgram("shading.vert", "shading.frag");
+	simpleShaderProgram = labhelper::loadShaderProgram("simple.vert", "simple.frag");
+	postFXshader = labhelper::loadShaderProgram("postFX.vert", "postFX.frag");
 	
-	cutoffShader = labhelper::loadShaderProgram("Shaders/postFX.vert", "Shaders/cutoff.frag");
-	hBlurShader = labhelper::loadShaderProgram("Shaders/postFX.vert", "Shaders/horizontal_blur.frag");
-	vBlurShader = labhelper::loadShaderProgram("Shaders/postFX.vert", "Shaders/vertical_blur.frag");
+	cutoffShader = labhelper::loadShaderProgram("postFX.vert", "cutoff.frag");
+	hBlurShader = labhelper::loadShaderProgram("postFX.vert", "horizontal_blur.frag");
+	vBlurShader = labhelper::loadShaderProgram("postFX.vert", "vertical_blur.frag");
 
 
 
