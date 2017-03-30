@@ -21,6 +21,13 @@ vec4 textureRect(in sampler2D tex, vec2 rectangleCoord) {
 
 void main() 
 {
+	//motion blurring. should maybe be done in shading.frag?
+	float zOverW = textureRect(frameBufferTexture, gl_FragCoord.xy).x;
+
+	vec4 H = vec4(gl_FragCoord.x * 2 - 1, (1 - gl_FragCoord.y) * 2 - 1, zOverW, 1.0);
+
+	//vec4 D = frameBufferTexture * H;
+
 	fragmentColor = textureRect(frameBufferTexture, gl_FragCoord.xy); //#nofilter
 
 	//fragmentColor = vec4(grayscale(textureRect(frameBufferTexture, gl_FragCoord.xy).xyz), 1.0);
