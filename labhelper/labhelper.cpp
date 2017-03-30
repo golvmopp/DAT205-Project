@@ -534,6 +534,9 @@ namespace labhelper {
 	{
 		glUniform3fv(glGetUniformLocation(shaderProgram, name), 1, &value.x);
 	}
+	void setUniformSlow(GLuint shaderProgram, const char *name, const std::vector<glm::vec3> &value) {
+		glUniform3fv(glGetUniformLocation(shaderProgram, name), 16, &value[0].x);
+	}
 
 	void debugDrawLine(const glm::mat4 &viewMatrix,
 		const glm::mat4 &projectionMatrix,

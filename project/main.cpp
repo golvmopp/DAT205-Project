@@ -35,7 +35,10 @@ bool showUI = false;
 int windowWidth, windowHeight;
 float speed = 0.0f;
 
+// Framebuffers for post processing
 std::vector<FboInfo> fboList;
+// Samples for ambient occlusion
+std::vector<vec3> hemisphereSamples;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -145,7 +148,15 @@ void initGL()
 		fboList[i].resize(w,h);
 	}
 
-
+	///////////////////////////////////////////////////////////////////////
+	// Generate samples for ambient occlusion
+	///////////////////////////////////////////////////////////////////////
+	int nrSamples = 16;
+	for (int i = 0; i < nrSamples; i++) {
+		vec3 tmp = labhelper::cosineSampleHemisphere();
+		tmp = tmp * labhelper::randf();
+		hemisphereSamples.push_back(tmp);
+	}
 
 	
 
@@ -185,6 +196,8 @@ void drawScene(GLuint currentShaderProgram, const mat4 &viewMatrix, const mat4 &
 	labhelper::setUniformSlow(currentShaderProgram, "viewSpaceLightPosition", vec3(viewSpaceLightPosition));
 	labhelper::setUniformSlow(currentShaderProgram, "viewSpaceLightDir", normalize(vec3(viewMatrix * vec4(-lightPosition, 0.0f))));
 
+	// Hemisphere samples
+	labhelper::setUniformSlow(currentShaderProgram, "hemisphere_samples", hemisphereSamples);
 
 	// Environment
 	labhelper::setUniformSlow(currentShaderProgram, "environment_multiplier", environment_multiplier);
