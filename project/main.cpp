@@ -197,7 +197,7 @@ void drawScene(GLuint currentShaderProgram, const mat4 &viewMatrix, const mat4 &
 	labhelper::setUniformSlow(currentShaderProgram, "viewSpaceLightDir", normalize(vec3(viewMatrix * vec4(-lightPosition, 0.0f))));
 
 	// Hemisphere samples
-	labhelper::setUniformSlow(currentShaderProgram, "hemisphere_samples", hemisphereSamples);
+	//labhelper::setUniformSlow(currentShaderProgram, "hemisphere_samples", hemisphereSamples);
 
 	// Environment
 	labhelper::setUniformSlow(currentShaderProgram, "environment_multiplier", environment_multiplier);
