@@ -122,6 +122,7 @@ namespace labhelper {
 	void setUniformSlow(GLuint shaderProgram, const char *name, const float value);
 	void setUniformSlow(GLuint shaderProgram, const char *name, const GLint value);
 	void setUniformSlow(GLuint shaderProgram, const char *name, const glm::vec3 &value);
+	void setUniformSlow(GLuint shaderProgram, const char *name, int n, const glm::vec3 &value);
 
 	/**
 	* Helper to draw a single quad (two triangles) that cover the entire screen
