@@ -49,6 +49,7 @@ in vec3 viewSpacePosition;
 ///////////////////////////////////////////////////////////////////////////////
 uniform mat4 viewInverse;
 uniform vec3 viewSpaceLightPosition;
+uniform mat4 previousViewProjectionMatrix;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Output color
@@ -104,6 +105,45 @@ vec3 calculateIndirectIllumination(vec3 wo, vec3 n)
 	return material_reflectivity * microfacet_term + (1 - material_reflectivity) * diffuse_term;
 
 }
+
+///////////////////////////
+//MOTION BLUR CRAP
+///////////////////////////
+vec4 getWorldPos() {
+	float zOverW = 1.0;//textureRect(gl_FragCoord, texCoord);
+	
+	vec4 H = vec4(texCoord.x * 2 - 1, (1 - texCoord.y) * 2 - 1, zOverW, 1.0);
+
+	vec4 D = viewInverse * H;
+
+	return (D/D.w);
+}
+
+vec2 getPixelVelocity(vec4 currentPos) {
+
+	vec4 previousPos = getWorldPos() * previousViewProjectionMatrix;
+
+	previousPos /= previousPos.w;
+
+	vec2 velocity = ((currentPos - previousPos) / 2.0f).xy; //might be wrong to extract .xy
+	
+	return velocity;
+}
+
+vec4 finalMotionBlur(vec2 velocity) {
+	vec4 color = textureRect(sceneSampler, texCoord);
+	texCoord += velocity;
+	int numSamples = 5;
+
+	for (int i = 1; i < numSamples; ++i, texCoord += velocity) {
+		vec4 currentColor = textureRect(sceneSampler, texCoord);
+		color += currentColor;
+	}
+
+	vec4 finalColor = color / numSamples;
+	return finalColor;
+}
+
 
 void main() 
 {

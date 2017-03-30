@@ -279,6 +279,7 @@ void display(void)
 	// Movement updates
 	///////////////////////////////////////////////////////////////////////////
 	shipTranslation[3] -= speed * shipRotation[0]; //speed update
+	//shipTranslation[2] -= speed * shipRotation[1]; //gravity
 
 	///////////////////////////////////////////////////////////////////////////
 	// Bind the environment map(s) to unused texture units
@@ -290,18 +291,20 @@ void display(void)
 	glActiveTexture(GL_TEXTURE8);
 	glBindTexture(GL_TEXTURE_2D, reflectionMap);
 	glActiveTexture(GL_TEXTURE0);
-
+	
 	///////////////////////////////////////////////////////////////////////////
 	// Draw from camera   @ This draws the base scene to the first FBO
 	///////////////////////////////////////////////////////////////////////////
 	glBindFramebuffer(GL_FRAMEBUFFER, fboList[0].framebufferId);
 	glViewport(0, 0, windowWidth, windowHeight);
 	glClearColor(0.2, 0.2, 0.8, 1.0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+
 
 	drawBackground(viewMatrix, projMatrix);
 	drawScene(shaderProgram, viewMatrix, projMatrix, lightViewMatrix, lightProjMatrix);
 	debugDrawLight(viewMatrix, projMatrix, vec3(lightPosition));
+
 
 	///////////////////////////////////////////////////////////////////////////
 	// Post Processing Passes
@@ -485,6 +488,7 @@ int main(int argc, char *argv[])
 		previousTime = currentTime;
 		currentTime  = timeSinceStart.count();
 		deltaTime    = currentTime - previousTime;
+
 		// render to window
 		display();
 
