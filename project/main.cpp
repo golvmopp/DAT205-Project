@@ -38,7 +38,7 @@ float speed = 0.0f;
 // Framebuffers for post processing
 std::vector<FboInfo> fboList;
 // Samples for ambient occlusion
-std::vector<vec3> hemisphereSamples;
+glm::vec3 hemisphereSamples[16];
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -157,7 +157,7 @@ void initGL()
 	for (int i = 0; i < nrSamples; i++) {
 		vec3 tmp = labhelper::cosineSampleHemisphere();
 		tmp = tmp * labhelper::randf();
-		hemisphereSamples.push_back(tmp);
+		hemisphereSamples[i] = tmp;
 	}
 
 	
@@ -199,7 +199,8 @@ void drawScene(GLuint currentShaderProgram, const mat4 &viewMatrix, const mat4 &
 	labhelper::setUniformSlow(currentShaderProgram, "viewSpaceLightDir", normalize(vec3(viewMatrix * vec4(-lightPosition, 0.0f))));
 
 	// Hemisphere samples
-	//labhelper::setUniformSlow(currentShaderProgram, "hemisphere_samples", hemisphereSamples);
+	labhelper::setUniformSlow(currentShaderProgram, "hemisphere_samples", 16, hemisphereSamples[0]);
+
 
 	//Previous view projection matrix for motion blur 
 	labhelper::setUniformSlow(currentShaderProgram, "previousViewProjectionMatrix", previousViewProjectionMatrix);
