@@ -86,6 +86,8 @@ mat4 roomModelMatrix;
 mat4 landingPadModelMatrix; 
 mat4 fighterModelMatrix;
 
+mat4 previousViewProjectionMatrix = mat4(1.0f);
+
 mat4 shipTranslation = translate(vec3(0.f, 10.f, 0.f));
 mat4 shipRotation = mat4(1.0f);
 
@@ -199,6 +201,9 @@ void drawScene(GLuint currentShaderProgram, const mat4 &viewMatrix, const mat4 &
 	// Hemisphere samples
 	//labhelper::setUniformSlow(currentShaderProgram, "hemisphere_samples", hemisphereSamples);
 
+	//Previous view projection matrix for motion blur 
+	labhelper::setUniformSlow(currentShaderProgram, "previousViewProjectionMatrix", previousViewProjectionMatrix);
+
 	// Environment
 	labhelper::setUniformSlow(currentShaderProgram, "environment_multiplier", environment_multiplier);
 
@@ -218,6 +223,8 @@ void drawScene(GLuint currentShaderProgram, const mat4 &viewMatrix, const mat4 &
 	labhelper::setUniformSlow(currentShaderProgram, "normalMatrix", inverse(transpose(viewMatrix * fighterModelMatrix)));
 
 	labhelper::render(fighterModel);
+
+
 }
 
 /*
@@ -287,7 +294,6 @@ void display(void)
 	mat4 lightViewMatrix = lookAt(lightPosition, vec3(0.0f), worldUp);
 	mat4 lightProjMatrix = perspective(radians(45.0f), 1.0f, 25.0f, 100.0f);
 
-
 	///////////////////////////////////////////////////////////////////////////
 	// Movement updates
 	///////////////////////////////////////////////////////////////////////////
@@ -322,6 +328,9 @@ void display(void)
 	///////////////////////////////////////////////////////////////////////////
 	// Post Processing Passes
 	///////////////////////////////////////////////////////////////////////////
+
+	previousViewProjectionMatrix = viewMatrix * projMatrix;
+
 	int bloomResult = bloom(1);
 
 	// Blending the bloom result into the base scene

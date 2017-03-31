@@ -109,38 +109,37 @@ vec3 calculateIndirectIllumination(vec3 wo, vec3 n)
 ///////////////////////////
 //MOTION BLUR CRAP
 ///////////////////////////
-vec4 getWorldPos() {
-	float zOverW = 1.0;//textureRect(gl_FragCoord, texCoord);
+vec4 motionBlur(vec4 color) {
+
+	//Extract the per-pixel world-space positions
+	float zOverW = texture2D(colorMap, texCoord).z;
 	
 	vec4 H = vec4(texCoord.x * 2 - 1, (1 - texCoord.y) * 2 - 1, zOverW, 1.0);
 
 	vec4 D = viewInverse * H;
 
-	return (D/D.w);
-}
+	vec4 worldPos = D/D.w;
 
-vec2 getPixelVelocity(vec4 currentPos) {
+	//comppute the per-pixel velocity
 
-	vec4 previousPos = getWorldPos() * previousViewProjectionMatrix;
+	vec4 previousPos = previousViewProjectionMatrix * worldPos;
 
 	previousPos /= previousPos.w;
 
-	vec2 velocity = ((currentPos - previousPos) / 2.0f).xy; //might be wrong to extract .xy
-	
-	return velocity;
-}
+	vec2 velocity = ((H - previousPos) / 2.0f).xy;
 
-vec4 finalMotionBlur(vec2 velocity) {
-	vec4 color = textureRect(sceneSampler, texCoord);
-	texCoord += velocity;
-	int numSamples = 5;
 
-	for (int i = 1; i < numSamples; ++i, texCoord += velocity) {
-		vec4 currentColor = textureRect(sceneSampler, texCoord);
-		color += currentColor;
+	//Perform the motion blur
+	vec4 theColor = texture2D(colorMap, texCoord);
+	vec2 nextPos = texCoord + velocity;
+	int numSamples = 4;
+
+	for (int i = 1; i < numSamples; ++i, nextPos += velocity) {
+		vec4 currentColor = texture2D(colorMap, texCoord);
+		theColor += currentColor;
 	}
 
-	vec4 finalColor = color / numSamples;
+	vec4 finalColor = theColor / numSamples;
 	return finalColor;
 }
 
@@ -173,6 +172,9 @@ void main()
 		emission_term;
 
 	fragmentColor = vec4(shading, 1.0);
+	
+
+	//fragmentColor = motionBlur(vec4(shading, 1.0));
 	return;
 
 }
