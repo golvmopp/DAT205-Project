@@ -48,7 +48,7 @@ GLuint shaderProgram; // Shader for rendering the final image
 GLuint simpleShaderProgram; // Shader used to draw the shadow map
 GLuint backgroundProgram;
 GLuint postFXshader; //Shader for post processing effects
-GLuint cutoffShader, hBlurShader, vBlurShader;
+GLuint cutoffShader, hBlurShader, vBlurShader, motionBlurShader;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Environment
@@ -114,6 +114,7 @@ void initGL()
 	cutoffShader = labhelper::loadShaderProgram("postFX.vert", "cutoff.frag");
 	hBlurShader = labhelper::loadShaderProgram("postFX.vert", "horizontal_blur.frag");
 	vBlurShader = labhelper::loadShaderProgram("postFX.vert", "vertical_blur.frag");
+	motionBlurShader = labhelper::loadShaderProgram("shading.vert", "shading.frag");
 
 
 
@@ -203,7 +204,8 @@ void drawScene(GLuint currentShaderProgram, const mat4 &viewMatrix, const mat4 &
 
 
 	//Previous view projection matrix for motion blur 
-	labhelper::setUniformSlow(currentShaderProgram, "previousViewProjectionMatrix", previousViewProjectionMatrix);
+	//labhelper::setUniformSlow(motionBlurShader, "previousViewProjectionMatrix", previousViewProjectionMatrix);
+	labhelper::setUniformSlow(motionBlurShader, "viewProjectionInverse", inverse(projectionMatrix * viewMatrix));
 
 	// Environment
 	labhelper::setUniformSlow(currentShaderProgram, "environment_multiplier", environment_multiplier);
@@ -329,30 +331,51 @@ void display(void)
 	///////////////////////////////////////////////////////////////////////////
 	// Post Processing Passes
 	///////////////////////////////////////////////////////////////////////////
+	glBindFramebuffer(GL_FRAMEBUFFER, fboList[1].framebufferId);
+	glUseProgram(cutoffShader);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, fboList[0].colorTextureTargets[0]);
 
-	previousViewProjectionMatrix = viewMatrix * projMatrix;
+	labhelper::drawFullScreenQuad();
 
-	int bloomResult = bloom(1);
+	glBindFramebuffer(GL_FRAMEBUFFER, fboList[2].framebufferId);
+	glUseProgram(hBlurShader);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, fboList[1].colorTextureTargets[0]);
 
-	// Blending the bloom result into the base scene
+	labhelper::drawFullScreenQuad();
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 
-	glBindFramebuffer(GL_FRAMEBUFFER, fboList[0].framebufferId);
+	glViewport(0, 0, windowWidth, windowHeight);
+	glClearColor(0.0, 0.0, 0.0, 1.0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glUseProgram(vBlurShader);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, fboList[2].colorTextureTargets[0]);
+
+	labhelper::drawFullScreenQuad();
+
+
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glUseProgram(postFXshader);
-	glBindTexture(GL_TEXTURE_2D, fboList[bloomResult].colorTextureTargets[0]);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, fboList[0].colorTextureTargets[0]);
+
 	labhelper::drawFullScreenQuad();
 
 	glDisable(GL_BLEND);
 
-	// writing the complete scene to the default FBO (screen)
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glViewport(0, 0, windowWidth, windowHeight);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+	/*glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glUseProgram(postFXshader);
-	glBindTexture(GL_TEXTURE_2D, fboList[0].colorTextureTargets[0]);
-	labhelper::drawFullScreenQuad();
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, fboList[3].colorTextureTargets[0]);
+
+	labhelper::drawFullScreenQuad();*/
 }
 
 bool handleEvents(void)

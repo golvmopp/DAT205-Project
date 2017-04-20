@@ -137,7 +137,7 @@ vec4 motionBlur(vec4 color) {
 	int numSamples = 4;
 
 	for (int i = 1; i < numSamples; ++i, nextPos += velocity) {
-		vec4 currentColor = texture2D(colorMap, texCoord);
+		vec4 currentColor = texture2D(colorMap, nextPos);
 		theColor += currentColor;
 	}
 
@@ -173,10 +173,10 @@ void main()
 		indirect_illumination_term +
 		emission_term;
 
-	fragmentColor = vec4(shading, 1.0);
+	//fragmentColor = vec4(shading, 1.0);
 	
 
-	//fragmentColor = motionBlur(vec4(shading, 1.0));
+	fragmentColor = vec4(shading,1.0 );
 	return;
 
 }
