@@ -173,10 +173,7 @@ void main()
 		indirect_illumination_term +
 		emission_term;
 
-	//fragmentColor = vec4(shading, 1.0);
-	
-
-	fragmentColor = vec4(shading,1.0 );
+	fragmentColor = vec4(shading, 1.0f);
 	return;
 
 }

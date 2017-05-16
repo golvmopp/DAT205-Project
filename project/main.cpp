@@ -114,7 +114,7 @@ void initGL()
 	cutoffShader = labhelper::loadShaderProgram("postFX.vert", "cutoff.frag");
 	hBlurShader = labhelper::loadShaderProgram("postFX.vert", "horizontal_blur.frag");
 	vBlurShader = labhelper::loadShaderProgram("postFX.vert", "vertical_blur.frag");
-	motionBlurShader = labhelper::loadShaderProgram("shading.vert", "shading.frag");
+	motionBlurShader = labhelper::loadShaderProgram("postFX.vert", "motion_blur.frag");
 
 
 
@@ -203,10 +203,7 @@ void drawScene(GLuint currentShaderProgram, const mat4 &viewMatrix, const mat4 &
 	labhelper::setUniformSlow(currentShaderProgram, "hemisphere_samples", 16, hemisphereSamples[0]);
 
 
-	//Previous view projection matrix for motion blur 
-	//labhelper::setUniformSlow(motionBlurShader, "previousViewProjectionMatrix", previousViewProjectionMatrix);
-	labhelper::setUniformSlow(motionBlurShader, "viewProjectionInverse", inverse(projectionMatrix * viewMatrix));
-
+	
 	// Environment
 	labhelper::setUniformSlow(currentShaderProgram, "environment_multiplier", environment_multiplier);
 
@@ -284,10 +281,10 @@ void display(void)
 	///////////////////////////////////////////////////////////////////////////
 	// setup matrices
 	///////////////////////////////////////////////////////////////////////////
-	mat4 projMatrix = perspective(radians(45.0f), float(windowWidth) / float(windowHeight), 5.0f, 2000.0f);
+	mat4 projMatrix = perspective(radians(45.0f), float(windowWidth) / float(windowHeight), 5.0f, 5000.0f);
 
-	mat4 viewMatrix = lookAt(cameraPosition, vec3(shipTranslation[3])*vec3(1.0f,1.5f,1.f), worldUp);
-	
+	mat4 viewMatrix = lookAt(cameraPosition, vec3(shipTranslation[3])*vec3(1.0f, 1.5f, 1.f), worldUp);
+
 	vec4 ref = vec4(60.f, 25.f, 0.f, 1.f);
 	vec4 tref = shipRotation * ref;
 	cameraPosition = vec3(tref + shipTranslation[3]);
@@ -313,14 +310,17 @@ void display(void)
 	glActiveTexture(GL_TEXTURE8);
 	glBindTexture(GL_TEXTURE_2D, reflectionMap);
 	glActiveTexture(GL_TEXTURE0);
-	
+
 	///////////////////////////////////////////////////////////////////////////
 	// Draw from camera   @ This draws the base scene to the first FBO
 	///////////////////////////////////////////////////////////////////////////
 	glBindFramebuffer(GL_FRAMEBUFFER, fboList[0].framebufferId);
+	if (fboList[0].width != windowWidth || fboList[0].height != windowHeight) {
+		fboList[0].resize(windowWidth, windowHeight);
+	}
 	glViewport(0, 0, windowWidth, windowHeight);
 	glClearColor(0.2, 0.2, 0.8, 1.0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
 	drawBackground(viewMatrix, projMatrix);
@@ -331,6 +331,8 @@ void display(void)
 	///////////////////////////////////////////////////////////////////////////
 	// Post Processing Passes
 	///////////////////////////////////////////////////////////////////////////
+
+	//bright area cutoffs to fbo1
 	glBindFramebuffer(GL_FRAMEBUFFER, fboList[1].framebufferId);
 	glUseProgram(cutoffShader);
 	glActiveTexture(GL_TEXTURE0);
@@ -338,6 +340,7 @@ void display(void)
 
 	labhelper::drawFullScreenQuad();
 
+	//horizontally blurred cutoffs to fbo2
 	glBindFramebuffer(GL_FRAMEBUFFER, fboList[2].framebufferId);
 	glUseProgram(hBlurShader);
 	glActiveTexture(GL_TEXTURE0);
@@ -345,6 +348,7 @@ void display(void)
 
 	labhelper::drawFullScreenQuad();
 
+	//vertically blurred horizontal blur to 0
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
@@ -359,23 +363,40 @@ void display(void)
 
 	labhelper::drawFullScreenQuad();
 
-
-
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	/*
+	//blend together blurred cutoff with regular shader
+	glBindFramebuffer(GL_FRAMEBUFFER, fboList[0].framebufferId);
 	glUseProgram(postFXshader);
 	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, fboList[3].colorTextureTargets[0]);
+
+	labhelper::drawFullScreenQuad();
+	*/
+
+	
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, fboList[0].depthBuffer);
+
+	glBindFramebuffer(GL_FRAMEBUFFER_EXT, 0);
+
+	glUseProgram(motionBlurShader);
+	//Setting some uniforms for motion blur. MUST BE DONE AFTER glUseProgram!
+	labhelper::setUniformSlow(motionBlurShader, "previousViewProjectionMatrix", previousViewProjectionMatrix);
+	labhelper::setUniformSlow(motionBlurShader, "viewProjectionInverse", inverse(projMatrix * viewMatrix));
+	glActiveTexture(GL_TEXTURE0);
+
 	glBindTexture(GL_TEXTURE_2D, fboList[0].colorTextureTargets[0]);
 
 	labhelper::drawFullScreenQuad();
 
 	glDisable(GL_BLEND);
 
-	/*glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glUseProgram(postFXshader);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, fboList[3].colorTextureTargets[0]);
 
-	labhelper::drawFullScreenQuad();*/
+
+
+
+	//variable to be used for motion blur
+	previousViewProjectionMatrix = (projMatrix * viewMatrix);
 }
 
 bool handleEvents(void)

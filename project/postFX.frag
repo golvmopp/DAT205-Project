@@ -23,7 +23,7 @@ void main()
 {
 
 	fragmentColor = textureRect(frameBufferTexture, gl_FragCoord.xy); //#nofilter
-
+		
 }
 
 	
