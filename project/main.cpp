@@ -17,6 +17,7 @@ using namespace glm;
 #include <Model.h>
 #include "hdr.h"
 #include "fbo.h"
+#include "AABB.h"
 
 
 
@@ -82,6 +83,7 @@ labhelper::Model *fighterModel = nullptr;
 labhelper::Model *landingpadModel = nullptr;
 labhelper::Model *sphereModel = nullptr;
 
+
 mat4 roomModelMatrix;
 mat4 landingPadModelMatrix; 
 mat4 fighterModelMatrix;
@@ -90,6 +92,9 @@ mat4 previousViewProjectionMatrix = mat4(1.0f);
 
 mat4 shipTranslation = translate(vec3(0.f, 10.f, 0.f));
 mat4 shipRotation = mat4(1.0f);
+
+// AABB ship start, change the center of the AABB according to the position of the ship
+// AABB *shipBV = new AABB(vec3(shipTranslation[3]), 12.f, 10.f, 12.f);
 
 void loadShaders(bool is_reload)
 {
