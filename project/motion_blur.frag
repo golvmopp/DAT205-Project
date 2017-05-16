@@ -21,7 +21,7 @@ void main()
 {
 
 	//Extract the per-pixel world-space positions
-	float zOverW = textureRect(shadowMap, gl_FragCoord.xy).z;// gl_FragCoord.w;
+	float zOverW = textureRect(shadowMap, texCoord).z;// gl_FragCoord.w;
 
 	vec4 H = vec4(texCoord.x * 2 - 1, (1 - texCoord.y) * 2 - 1, zOverW, 1.0);
 
@@ -35,13 +35,13 @@ void main()
 
 	previousPos /= previousPos.w;
 
-	vec2 velocity = ((H - previousPos) / 2.0f).xy;
+	vec2 velocity = ((H - previousPos) / 2.0f).xy * 10;
 
 
 	//Perform the motion blur
 	vec4 theColor = textureRect(colorMap, gl_FragCoord.xy);
 	vec2 nextPos = gl_FragCoord.xy + velocity;
-	float numSamples = 300.f;
+	float numSamples = 30.f;
 
 	for (int i = 1; i < numSamples; ++i, nextPos += velocity) {
 		vec4 currentColor = textureRect(colorMap, nextPos);

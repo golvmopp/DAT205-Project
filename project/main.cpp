@@ -279,7 +279,10 @@ void display(void)
 		if (w != windowWidth || h != windowHeight) {
 			windowWidth = w;
 			windowHeight = h;
-			//Maybe need to update FBO sizes, or is this handled already?
+			//Maybe need to update FBO sizes
+			for (int i = 0; i < 5; i++) {
+				fboList[i].resize(w, h);
+			}
 		}
 	}
 
@@ -369,17 +372,6 @@ void display(void)
 	glBindTexture(GL_TEXTURE_2D, fboList[2].colorTextureTargets[0]);
 
 	labhelper::drawFullScreenQuad();
-
-	/*
-	//blend together blurred cutoff with regular shader
-	glBindFramebuffer(GL_FRAMEBUFFER, fboList[0].framebufferId);
-	glUseProgram(postFXshader);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, fboList[3].colorTextureTargets[0]);
-
-	labhelper::drawFullScreenQuad();
-	*/
-
 	
 	glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D, fboList[0].depthBuffer);
@@ -397,9 +389,6 @@ void display(void)
 	labhelper::drawFullScreenQuad();
 
 	glDisable(GL_BLEND);
-
-
-
 
 
 	//variable to be used for motion blur
