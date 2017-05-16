@@ -38,7 +38,7 @@ float getMin(char xyz)
 
 bool intersect(AABB other)
 {
-	return ( (getMin(0) <= other.getMax(0) && getMax(0) >= other.getMin(0)) &&
+	return ((getMin(0) <= other.getMax(0) && getMax(0) >= other.getMin(0)) &&
 		(getMin(1) <= other.getMax(1) && getMax(1) >= other.getMin(1)) &&
-		(getMin(2) <= other.getMax(2) && getMax(2) >= other.getMin(2)) )
+		(getMin(2) <= other.getMax(2) && getMax(2) >= other.getMin(2)));
 }
