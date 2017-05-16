@@ -113,11 +113,13 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AABB.cpp" />
     <ClCompile Include="imgui_impl_sdl_gl3.cpp" />
     <ClCompile Include="labhelper.cpp" />
     <ClCompile Include="Model.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AABB.h" />
     <ClInclude Include="imgui_impl_sdl_gl3.h" />
     <ClInclude Include="labhelper.h" />
     <ClInclude Include="Model.h" />
