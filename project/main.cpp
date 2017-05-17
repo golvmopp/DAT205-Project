@@ -34,7 +34,14 @@ float previousTime = 0.0f;
 float deltaTime    = 0.0f;
 bool showUI = false;
 int windowWidth, windowHeight;
-float speed = 0.0f;
+
+//car speed physics
+float speed = 0.f;
+float velocity = 0.f;
+float dragCoeff = 0.25f;
+float dragForce = 0.f;
+float acceleration = 0.f;
+
 
 // Framebuffers for post processing
 std::vector<FboInfo> fboList;
@@ -126,8 +133,8 @@ void initGL()
 	///////////////////////////////////////////////////////////////////////
 	// Load models and set up model matrices
 	///////////////////////////////////////////////////////////////////////
-	fighterModel = labhelper::loadModelFromOBJ("../scenes/NewShip.obj");
-	landingpadModel = labhelper::loadModelFromOBJ(	"../scenes/landingpad.obj");
+	fighterModel = labhelper::loadModelFromOBJ("../scenes/box_ship.obj");
+	landingpadModel = labhelper::loadModelFromOBJ(	"../scenes/racetrack_flat.obj");
 	sphereModel = labhelper::loadModelFromOBJ("../scenes/sphere.obj");
 
 	roomModelMatrix = mat4(1.0f);
@@ -233,38 +240,46 @@ void drawScene(GLuint currentShaderProgram, const mat4 &viewMatrix, const mat4 &
 }
 
 /*
-	Returns which FBO in list contains the result, i.e. bloomed lights
-	write is the first FBO written to in this function. It will
-	use results from FBO #write-1 to begin with.
+	Applies the bloom filter and sends to render. Activates GL_BLEND
 */
-int bloom(int write) 
+void bloom(int write) 
 {
-	glActiveTexture(GL_TEXTURE0); // Just to make sure
 
-	// Cut off light sources to blur
+	//bright area cutoffs
 	glBindFramebuffer(GL_FRAMEBUFFER, fboList[write].framebufferId);
 	glUseProgram(cutoffShader);
+	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, fboList[write - 1].colorTextureTargets[0]);
 	labhelper::drawFullScreenQuad();
 
 	write++;
+
 
 	// blur light sources horizontally
 	glBindFramebuffer(GL_FRAMEBUFFER, fboList[write].framebufferId);
 	glUseProgram(hBlurShader);
+	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, fboList[write - 1].colorTextureTargets[0]);
 	labhelper::drawFullScreenQuad();
 
 	write++;
 
-	// bloom light sources vertically
-	glBindFramebuffer(GL_FRAMEBUFFER, fboList[write].framebufferId);
+	//vertically blurred horizontal blur, send to render.
+	//activates blending, resets color and depth buffers
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+
+	glViewport(0, 0, windowWidth, windowHeight);
+	glClearColor(0.0, 0.0, 0.0, 1.0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 	glUseProgram(vBlurShader);
+	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, fboList[write - 1].colorTextureTargets[0]);
+
 	labhelper::drawFullScreenQuad();
 
-	// Return "pointer" to blurred light sources to be used as bloom effect
-	return write;
 }
 
 
@@ -290,13 +305,13 @@ void display(void)
 	// setup matrices
 	///////////////////////////////////////////////////////////////////////////
 
-	vec4 ref = vec4(60.f, 25.f, 0.f, 1.f);
+	vec4 ref = vec4(10.f, 6.f, 0.f, 1.f);
 	vec4 tref = shipRotation * ref;
 	cameraPosition = vec3(tref + shipTranslation[3]);
 
 	mat4 projMatrix = perspective(radians(45.0f), float(windowWidth) / float(windowHeight), 5.0f, 5000.0f);
 
-	mat4 viewMatrix = lookAt(cameraPosition, vec3(shipTranslation[3])*vec3(1.0f, 1.5f, 1.f), worldUp);
+	mat4 viewMatrix = lookAt(cameraPosition, vec3(shipTranslation[3])*vec3(1.0f, 1.3f, 1.f), worldUp);
 
 
 	vec4 lightStartPosition = vec4(40.0f, 40.0f, 0.0f, 1.0f);
@@ -342,36 +357,8 @@ void display(void)
 	// Post Processing Passes
 	///////////////////////////////////////////////////////////////////////////
 
-	//bright area cutoffs to fbo1
-	glBindFramebuffer(GL_FRAMEBUFFER, fboList[1].framebufferId);
-	glUseProgram(cutoffShader);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, fboList[0].colorTextureTargets[0]);
-
-	labhelper::drawFullScreenQuad();
-
-	//horizontally blurred cutoffs to fbo2
-	glBindFramebuffer(GL_FRAMEBUFFER, fboList[2].framebufferId);
-	glUseProgram(hBlurShader);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, fboList[1].colorTextureTargets[0]);
-
-	labhelper::drawFullScreenQuad();
-
-	//vertically blurred horizontal blur to 0
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-
-	glViewport(0, 0, windowWidth, windowHeight);
-	glClearColor(0.0, 0.0, 0.0, 1.0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	glUseProgram(vBlurShader);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, fboList[2].colorTextureTargets[0]);
-
-	labhelper::drawFullScreenQuad();
+	//Applies a bloom filter. Note that this activates GL_BLEND!
+	bloom(1);
 	
 	glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D, fboList[0].depthBuffer);
@@ -433,26 +420,20 @@ bool handleEvents(void)
 
 	///////////////////// NEW STEERING
 	float rotspeed	= .05f;
-	float gospeed	= 2.0f;
+	float gospeed	= 1.f;
 	float godspeed = 4.0f;
 	
+	
+
 	if (speed != 0) {
 		if (state[SDL_SCANCODE_RIGHT]) {
-			if (speed > 5) {
-				shipRotation[0] += rotspeed * shipRotation[2];
-			}
-			else {
-				shipRotation[0] += (rotspeed*0.2f*speed) * shipRotation[2];
-			}
+			
+			shipRotation[0] += (rotspeed - rotspeed*0.07f*speed) * shipRotation[2];
+			
 		}
 		if (state[SDL_SCANCODE_LEFT]) {
-			if (speed > 5) {
-				shipRotation[0] -= rotspeed * shipRotation[2];
-			}
-			else {
-				shipRotation[0] -= (rotspeed*0.2f*speed) * shipRotation[2];
+			shipRotation[0] -= (rotspeed - rotspeed*0.07f*speed) * shipRotation[2];
 
-			}
 		}
 	}
 
@@ -461,12 +442,15 @@ bool handleEvents(void)
 
 	if (state[SDL_SCANCODE_UP]) {
 		if (speed <= 10.f) {
-			speed += 0.05f*gospeed;
+			dragForce = -dragCoeff * velocity;
+			acceleration = .01f + dragForce;
+			velocity += acceleration;
+			speed += velocity;
 		}
 	} 
 	else if (state[SDL_SCANCODE_B]) {
-		if (speed <= 13.f) {
-			speed += 0.05f*godspeed;
+		if (speed <= 10.f) {
+			speed += velocity;
 		}
 
 	}
@@ -552,6 +536,9 @@ int main(int argc, char *argv[])
 		currentTime  = timeSinceStart.count();
 		deltaTime    = currentTime - previousTime;
 
+		// check events (keyboard among other)
+		stopRendering = handleEvents();
+
 		// render to window
 		display();
 
@@ -563,8 +550,7 @@ int main(int argc, char *argv[])
 		// Swap front and back buffer. This frame will now been displayed.
 		SDL_GL_SwapWindow(g_window);
 
-		// check events (keyboard among other)
-		stopRendering = handleEvents();
+
 	}
 	// Free Models
 	labhelper::freeModel(fighterModel);
