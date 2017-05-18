@@ -5,6 +5,12 @@ using namespace glm;
 
 vec3 center, extent;
 
+AABB::AABB()
+{
+	center = vec3();
+	extent = vec3();
+}
+
 AABB::AABB(vec3 c, vec3 x)
 {
 	center = c;
@@ -15,7 +21,7 @@ AABB::~AABB()
 {
 }
 
-vec3 move(vec3 newCenter)
+vec3 AABB::move(vec3 newCenter)
 {
 	center = newCenter;
 	return center;
@@ -24,19 +30,19 @@ vec3 move(vec3 newCenter)
 /*
  @param xyz [0, 1, 2] for [x, y, z] axis respectively
 */
-float getMax(char xyz)
+float AABB::getMax(char xyz)
 {
 	return center[xyz] + extent[xyz];
 }
 /*
  @param xyz [0, 1, 2] for [x, y, z] axis respectively
 */
-float getMin(char xyz)
+float AABB::getMin(char xyz)
 {
 	return center[xyz] - extent[xyz];
 }
 
-bool intersect(AABB other)
+bool AABB::intersect(AABB other)
 {
 	return ((getMin(0) <= other.getMax(0) && getMax(0) >= other.getMin(0)) &&
 		(getMin(1) <= other.getMax(1) && getMax(1) >= other.getMin(1)) &&

@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <algorithm>
 #include <chrono>
+#include <iostream>
 
 #include <labhelper.h>
 #include <imgui.h>
@@ -13,11 +14,10 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
 using namespace glm;
-
 #include <Model.h>
+#include <AABB.h>
 #include "hdr.h"
 #include "fbo.h"
-//#include "AABB.h"
 
 
 
@@ -94,7 +94,8 @@ mat4 shipTranslation = translate(vec3(0.f, 10.f, 0.f));
 mat4 shipRotation = mat4(1.0f);
 
 // AABB ship start, change the center of the AABB according to the position of the ship
-// AABB *shipBV = new AABB(vec3(shipTranslation[3]), 12.f, 10.f, 12.f);
+AABB shipBV = AABB(vec3(shipTranslation[3]), vec3(12.f, 10.f, 12.f));
+AABB goalBV = AABB(vec3(0.f), vec3(10.f, 10.f, 10.f));
 
 void loadShaders(bool is_reload)
 {
@@ -306,6 +307,7 @@ void display(void)
 	///////////////////////////////////////////////////////////////////////////
 	shipTranslation[3] -= speed * shipRotation[0]; //speed update
 	//shipTranslation[2] -= speed * shipRotation[1]; //gravity
+	shipBV.move(shipTranslation[3]);
 
 	///////////////////////////////////////////////////////////////////////////
 	// Bind the environment map(s) to unused texture units
@@ -547,6 +549,14 @@ void gui()
 	ImGui::Render();
 }
 
+void collisionTest(void)
+{
+	if (shipBV.intersect(goalBV)) {
+		std::cout << "win" << std::endl;
+	}
+}
+
+
 int main(int argc, char *argv[])
 {
 	g_window = labhelper::init_window_SDL("OpenGL Project");
@@ -562,6 +572,8 @@ int main(int argc, char *argv[])
 		previousTime = currentTime;
 		currentTime  = timeSinceStart.count();
 		deltaTime    = currentTime - previousTime;
+
+		collisionTest();
 
 		// render to window
 		display();

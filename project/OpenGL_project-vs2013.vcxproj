@@ -136,6 +136,7 @@
     </Bscmake>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\labhelper\AABB.cpp" />
     <ClCompile Include="fbo.cpp" />
     <ClCompile Include="hdr.cpp" />
     <ClCompile Include="heightfield.cpp" />
@@ -165,6 +166,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\labhelper\AABB.h" />
     <ClInclude Include="fbo.h" />
     <ClInclude Include="hdr.h" />
     <ClInclude Include="movControl.h" />
