@@ -5,6 +5,13 @@ using namespace glm;
 
 vec3 center, extent;
 
+/*
+{
+center = vec3();
+extent = vec3();
+}AABB::AABB()
+*/
+
 AABB::AABB(vec3 c, vec3 x)
 {
 	center = c;

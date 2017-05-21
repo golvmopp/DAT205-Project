@@ -14,12 +14,10 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
 using namespace glm;
-
 #include <Model.h>
+#include <AABB.h>
 #include "hdr.h"
 #include "fbo.h"
-#include <AABB.h>
-
 
 
 using std::min;
@@ -331,6 +329,7 @@ void display(void)
 	///////////////////////////////////////////////////////////////////////////
 	shipTranslation[3] -= speed * shipRotation[0]; //speed update
 	//shipTranslation[2] -= speed * shipRotation[1]; //gravity
+
 	shipBV.move(vec3(shipTranslation[3]));
 	
 	if (shipBV.intersect(cps[nextCheckpoint])) {
@@ -343,9 +342,6 @@ void display(void)
 			nextCheckpoint = (nextCheckpoint + 1) % noOfCheckpoints;
 		}
 	}
-	
-
-
 	///////////////////////////////////////////////////////////////////////////
 	// Bind the environment map(s) to unused texture units
 	///////////////////////////////////////////////////////////////////////////
@@ -540,6 +536,14 @@ void gui()
 	// Render the GUI.
 	ImGui::Render();
 }
+
+void collisionTest(void)
+{
+	if (shipBV.intersect(goalBV)) {
+		std::cout << "win" << std::endl;
+	}
+}
+
 
 int main(int argc, char *argv[])
 {

@@ -4,7 +4,6 @@ using namespace glm;
 
 class AABB
 {
-
 private: 
 	float getMax(char xyz);
 	float getMin(char xyz);
