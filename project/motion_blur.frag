@@ -49,6 +49,6 @@ void main()
 		vec4 currentColor = textureRect(colorMap, nextPos);
 		theColor += currentColor;
 	}
-	fragmentColor = vec4(texCoord, 0.f, 1.f);//theColor / numSamples;
+	fragmentColor = textureRect(colorMap, gl_FragCoord.xy);//theColor / numSamples;
 	return;
 }

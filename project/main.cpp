@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <algorithm>
 #include <chrono>
+#include <iostream>
 
 #include <labhelper.h>
 #include <imgui.h>
@@ -17,7 +18,7 @@ using namespace glm;
 #include <Model.h>
 #include "hdr.h"
 #include "fbo.h"
-//#include "AABB.h"
+#include <AABB.h>
 
 
 
@@ -101,7 +102,13 @@ mat4 shipTranslation = translate(vec3(0.f, 10.f, 0.f));
 mat4 shipRotation = mat4(1.0f);
 
 // AABB ship start, change the center of the AABB according to the position of the ship
-// AABB *shipBV = new AABB(vec3(shipTranslation[3]), 12.f, 10.f, 12.f);
+ AABB shipBV = AABB(vec3(shipTranslation[3]), vec3(12.f, 10.f, 12.f));
+ AABB yesBox = AABB(vec3(2200.f, 10.f, 0.f), vec3(300.f, 300.f, 300.f));
+ AABB cps[] = {AABB(vec3(0.f, 10.f, 0.f), vec3(50.f, 50.f, 200.f)),
+			   AABB(vec3(-3615.f, 10.f, -1825.f), vec3(200.f, 50.f, 200.f)) };
+
+ int noOfCheckpoints = 2;
+ int nextCheckpoint = 1;
 
 void loadShaders(bool is_reload)
 {
@@ -324,6 +331,20 @@ void display(void)
 	///////////////////////////////////////////////////////////////////////////
 	shipTranslation[3] -= speed * shipRotation[0]; //speed update
 	//shipTranslation[2] -= speed * shipRotation[1]; //gravity
+	shipBV.move(vec3(shipTranslation[3]));
+	
+	if (shipBV.intersect(cps[nextCheckpoint])) {
+		if (nextCheckpoint != 0) {
+			std::cout << "checkpoint " << nextCheckpoint << " reached!" << std::endl;
+			nextCheckpoint = (nextCheckpoint + 1) % noOfCheckpoints;
+		}
+		if (nextCheckpoint == 0) {
+			std::cout << "Winner!" << std::endl;
+			nextCheckpoint = (nextCheckpoint + 1) % noOfCheckpoints;
+		}
+	}
+	
+
 
 	///////////////////////////////////////////////////////////////////////////
 	// Bind the environment map(s) to unused texture units
