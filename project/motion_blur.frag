@@ -21,32 +21,34 @@ void main()
 {
 
 	//Extract the per-pixel world-space positions
-	float zOverW = textureRect(shadowMap, texCoord).z;// gl_FragCoord.w;
+	float zOverW = textureRect(shadowMap, gl_FragCoord.xy).z;// gl_FragCoord.w;
 
-	vec4 H = vec4(texCoord.x * 2 - 1, (1 - texCoord.y) * 2 - 1, zOverW, 1.0);
+	vec4 H = vec4(texCoord.x, (1 - texCoord.y), zOverW, 1.0);
 
 	vec4 D = viewProjectionInverse * H;
 
 	vec4 worldPos = D / D.w;
 
-	//comppute the per-pixel velocity
+	//compute the per-pixel velocity
+
+	vec4 currentPos = H;
 
 	vec4 previousPos = previousViewProjectionMatrix * worldPos;
 
 	previousPos /= previousPos.w;
 
-	vec2 velocity = ((H - previousPos) / 2.0f).xy * 10;
+	vec2 velocity = ((currentPos - previousPos) / 2.0f).xy;
 
 
 	//Perform the motion blur
 	vec4 theColor = textureRect(colorMap, gl_FragCoord.xy);
-	vec2 nextPos = gl_FragCoord.xy + velocity;
-	float numSamples = 30.f;
+	vec2 nextPos = texCoord.xy + velocity;
+	float numSamples = 100.f;
 
 	for (int i = 1; i < numSamples; ++i, nextPos += velocity) {
 		vec4 currentColor = textureRect(colorMap, nextPos);
 		theColor += currentColor;
 	}
-	fragmentColor = theColor / numSamples;
+	fragmentColor = vec4(texCoord, 0.f, 1.f);//theColor / numSamples;
 	return;
 }
