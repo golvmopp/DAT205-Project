@@ -337,7 +337,7 @@ void display(void)
 			std::cout << "checkpoint " << nextCheckpoint << " reached!" << std::endl;
 			nextCheckpoint = (nextCheckpoint + 1) % noOfCheckpoints;
 		}
-		if (nextCheckpoint == 0) {
+		else if (nextCheckpoint == 0) {
 			std::cout << "Winner!" << std::endl;
 			nextCheckpoint = (nextCheckpoint + 1) % noOfCheckpoints;
 		}
@@ -535,13 +535,6 @@ void gui()
 	// ----------------------------------------------------------
 	// Render the GUI.
 	ImGui::Render();
-}
-
-void collisionTest(void)
-{
-	if (shipBV.intersect(goalBV)) {
-		std::cout << "win" << std::endl;
-	}
 }
 
 
