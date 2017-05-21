@@ -317,7 +317,7 @@ void display(void)
 	mat4 projMatrix = perspective(radians(45.0f), float(windowWidth) / float(windowHeight), 5.0f, 5000.0f);
 
 	mat4 viewMatrix = lookAt(cameraPosition, vec3(shipTranslation[3])*vec3(1.0f, 1.3f, 1.f), worldUp);
-
+	
 
 	vec4 lightStartPosition = vec4(40.0f, 40.0f, 0.0f, 1.0f);
 	lightPosition = vec3(rotate(currentTime, worldUp) * lightStartPosition);
@@ -332,16 +332,7 @@ void display(void)
 
 	shipBV.move(vec3(shipTranslation[3]));
 	
-	if (shipBV.intersect(cps[nextCheckpoint])) {
-		if (nextCheckpoint != 0) {
-			std::cout << "checkpoint " << nextCheckpoint << " reached!" << std::endl;
-			nextCheckpoint = (nextCheckpoint + 1) % noOfCheckpoints;
-		}
-		else if (nextCheckpoint == 0) {
-			std::cout << "Winner!" << std::endl;
-			nextCheckpoint = (nextCheckpoint + 1) % noOfCheckpoints;
-		}
-	}
+	
 	///////////////////////////////////////////////////////////////////////////
 	// Bind the environment map(s) to unused texture units
 	///////////////////////////////////////////////////////////////////////////
@@ -537,6 +528,21 @@ void gui()
 	ImGui::Render();
 }
 
+bool checkCheckPoint(void)
+{
+	if (shipBV.intersect(cps[nextCheckpoint])) {
+		if (nextCheckpoint != 0) { // This is a normal checkpoint
+			std::cout << "checkpoint " << nextCheckpoint << " reached!" << std::endl;
+			nextCheckpoint = (nextCheckpoint + 1) % noOfCheckpoints;
+			return false;
+		}
+		else { // This is the goal checkpoint
+			std::cout << "Winner!" << std::endl;
+			nextCheckpoint = (nextCheckpoint + 1) % noOfCheckpoints;
+			return true;
+		}
+	}
+}
 
 int main(int argc, char *argv[])
 {
@@ -546,6 +552,8 @@ int main(int argc, char *argv[])
 
 	bool stopRendering = false;
 	auto startTime = std::chrono::system_clock::now();
+	// start lap1 timer
+	float lapStart = (std::chrono::system_clock::now() - startTime).count();
 
 	while (!stopRendering) {
 		//update currentTime
@@ -560,6 +568,13 @@ int main(int argc, char *argv[])
 		// render to window
 		display();
 
+		if (checkCheckPoint())
+		{
+			float lapTime = currentTime - lapStart;
+			lapStart = currentTime;
+			std::cout << lapTime << std::endl;
+		}
+		
 		// Render overlay GUI.
 		if (showUI) {
 			gui();
