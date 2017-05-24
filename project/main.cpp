@@ -50,15 +50,12 @@ glm::vec3 noiseTex[16];
 GLuint ssaoTex;
 
 // Shadow stuff
-enum ClampMode {
-	Edge = 1,
-	Border = 2
-};
 FboInfo shadowMapFB;
-int shadowMapClampMode = ClampMode::Edge;
 int shadowMapResolution = 1024;
 float polygonOffset_factor = 1.0f;
 float polygonOffset_units = 0.8f;
+float innerSpotlightAngle = 22.5f;
+float outerSpotlightAngle = 25.0f;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Shader programs
@@ -245,6 +242,9 @@ void drawScene(GLuint currentShaderProgram, const mat4 &viewMatrix, const mat4 &
 	//shadow mapping
 	mat4 lightMatrix = lightProjectionMatrix * lightViewMatrix * inverse(viewMatrix);
 	labhelper::setUniformSlow(currentShaderProgram, "lightMatrix", lightMatrix);
+	labhelper::setUniformSlow(currentShaderProgram, "viewSpaceLightDir", normalize(vec3(viewMatrix * vec4(-lightPosition, 0.0f))));
+	labhelper::setUniformSlow(currentShaderProgram, "spotOuterAngle", std::cos(radians(outerSpotlightAngle)));
+	labhelper::setUniformSlow(currentShaderProgram, "spotInnerAngle", std::cos(radians(innerSpotlightAngle)));
 
 	// Light source
 	vec4 viewSpaceLightPosition = viewMatrix * vec4(lightPosition, 1.0f);
@@ -361,8 +361,8 @@ void display(void)
 	
 
 	vec4 lightStartPosition = vec4(40.0f, 40.0f, 0.0f, 1.0f);
-	lightPosition = vec3(rotate(currentTime, worldUp) * lightStartPosition); //rotating sun
-	//lightPosition = vec3(lightStartPosition.x, lightStartPosition.y, lightStartPosition.z); //static sun
+	//lightPosition = vec3(rotate(currentTime, worldUp) * lightStartPosition); //rotating sun
+	lightPosition = vec3(lightStartPosition.x, lightStartPosition.y, lightStartPosition.z); //static sun
 	mat4 lightViewMatrix = lookAt(lightPosition, vec3(0.0f), worldUp);
 	mat4 lightProjMatrix = perspective(radians(45.0f), 1.0f, 25.0f, 100.0f);
 
