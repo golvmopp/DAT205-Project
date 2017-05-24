@@ -149,7 +149,7 @@ void initGL()
 	// Load models and set up model matrices
 	///////////////////////////////////////////////////////////////////////
 	fighterModel = labhelper::loadModelFromOBJ("../scenes/box_ship.obj");
-	landingpadModel = labhelper::loadModelFromOBJ("../scenes/landingPad.obj");// racetrack_flat.obj");
+	landingpadModel = labhelper::loadModelFromOBJ("../scenes/racetrack_basic.obj");
 	sphereModel = labhelper::loadModelFromOBJ("../scenes/sphere.obj");
 
 	roomModelMatrix = mat4(1.0f);
