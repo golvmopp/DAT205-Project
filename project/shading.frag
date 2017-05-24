@@ -16,6 +16,7 @@ uniform float material_emission;
 uniform vec3 viewSpaceLightDir;
 uniform float spotInnerAngle;
 uniform float spotOuterAngle;
+uniform int texmapscale;
 
 uniform int has_emission_texture;
 uniform int has_color_texture;
@@ -114,6 +115,28 @@ vec3 calculateIndirectIllumination(vec3 wo, vec3 n)
 
 }
 
+vec4 textureRect(in sampler2D tex, vec2 rectangleCoord) {
+	return texture(tex, rectangleCoord / textureSize(tex, 0));
+}
+/*
+//PCF stuff
+vec3 offset_lookup(sampler2D map, vec4 loc, vec2 offset) {
+	return texture2DProj(map, vec4(gl_FragCoord.xy + offset * texmapscale * loc.w, 
+	loc.z, 
+	loc.w)).xyz;
+}
+
+float shadowCoeff() {
+	float sum = 0;
+	float x, y;
+
+	for (y = -1.5; y <= 1.5; y += 1.0) {
+		for (x = -1.5; x <= 1.5; x += 1.0) {
+			sum += offset_lookup(shadowMapTex, shadowMapCoord, vec2(x, y));
+		}
+	}
+	return sum / 16.0;
+}*/
 
 void main() 
 {
@@ -124,7 +147,7 @@ void main()
 	vec3 posToLight = normalize(viewSpaceLightPosition - viewSpacePosition);
 	float cosAngle = dot(posToLight, -viewSpaceLightDir);
 
-	// Spotlight with hard border:
+	//spotlight, smooth border
 	float spotAttenuation = smoothstep(spotOuterAngle, spotInnerAngle, cosAngle);
 	visibility *= spotAttenuation;
 

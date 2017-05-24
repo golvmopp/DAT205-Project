@@ -31,7 +31,7 @@ SDL_Window* g_window = nullptr;
 float currentTime  = 0.0f;
 float previousTime = 0.0f;
 float deltaTime    = 0.0f;
-bool showUI = false;
+bool showUI = true;
 int windowWidth, windowHeight;
 
 //car speed physics
@@ -51,11 +51,11 @@ GLuint ssaoTex;
 
 // Shadow stuff
 FboInfo shadowMapFB;
-int shadowMapResolution = 1024;
+int shadowMapResolution = 512;
 float polygonOffset_factor = 1.0f;
 float polygonOffset_units = 0.8f;
-float innerSpotlightAngle = 22.5f;
-float outerSpotlightAngle = 25.0f;
+float innerSpotlightAngle = 20.f;
+float outerSpotlightAngle = 22.5f;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Shader programs
@@ -149,7 +149,7 @@ void initGL()
 	// Load models and set up model matrices
 	///////////////////////////////////////////////////////////////////////
 	fighterModel = labhelper::loadModelFromOBJ("../scenes/box_ship.obj");
-	landingpadModel = labhelper::loadModelFromOBJ("../scenes/racetrack_flat.obj");
+	landingpadModel = labhelper::loadModelFromOBJ("../scenes/landingPad.obj");// racetrack_flat.obj");
 	sphereModel = labhelper::loadModelFromOBJ("../scenes/sphere.obj");
 
 	roomModelMatrix = mat4(1.0f);
@@ -245,6 +245,7 @@ void drawScene(GLuint currentShaderProgram, const mat4 &viewMatrix, const mat4 &
 	labhelper::setUniformSlow(currentShaderProgram, "viewSpaceLightDir", normalize(vec3(viewMatrix * vec4(-lightPosition, 0.0f))));
 	labhelper::setUniformSlow(currentShaderProgram, "spotOuterAngle", std::cos(radians(outerSpotlightAngle)));
 	labhelper::setUniformSlow(currentShaderProgram, "spotInnerAngle", std::cos(radians(innerSpotlightAngle)));
+	labhelper::setUniformSlow(currentShaderProgram, "texmapscale", shadowMapResolution);
 
 	// Light source
 	vec4 viewSpaceLightPosition = viewMatrix * vec4(lightPosition, 1.0f);
