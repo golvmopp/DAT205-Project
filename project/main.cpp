@@ -18,7 +18,7 @@ using namespace glm;
 #include <AABB.h>
 #include "hdr.h"
 #include "fbo.h"
-
+#include "BVH.h"
 
 using std::min;
 using std::max;
@@ -101,12 +101,11 @@ mat4 shipRotation = mat4(1.0f);
 
 // AABB ship start, change the center of the AABB according to the position of the ship
  AABB shipBV = AABB(vec3(shipTranslation[3]), vec3(12.f, 10.f, 12.f));
- AABB yesBox = AABB(vec3(2200.f, 10.f, 0.f), vec3(300.f, 300.f, 300.f));
  AABB cps[] = {AABB(vec3(0.f, 10.f, 0.f), vec3(50.f, 50.f, 200.f)),
 			   AABB(vec3(-3615.f, 10.f, -1825.f), vec3(200.f, 50.f, 200.f)) };
-
  int noOfCheckpoints = 2;
  int nextCheckpoint = 1;
+
 
 void loadShaders(bool is_reload)
 {
@@ -116,7 +115,8 @@ void loadShaders(bool is_reload)
 	if (shader != 0) backgroundProgram = shader;
 	shader = labhelper::loadShaderProgram("shading.vert", "shading.frag", is_reload);
 	if (shader != 0) shaderProgram = shader;
-	}
+	
+}
 
 void initGL()
 {

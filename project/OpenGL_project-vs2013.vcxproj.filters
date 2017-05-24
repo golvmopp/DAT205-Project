@@ -8,6 +8,7 @@
     <ClCompile Include="movControl.cpp" />
     <ClCompile Include="ParticleSystem.cpp" />
     <ClCompile Include="..\labhelper\AABB.cpp" />
+    <ClCompile Include="BVH.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="fbo.h" />
@@ -16,6 +17,8 @@
     <ClInclude Include="heightfield.h" />
     <ClInclude Include="ParticleSystem.h" />
     <ClInclude Include="..\labhelper\AABB.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="BVH.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="postFX.frag">
@@ -65,5 +68,8 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{8119e029-db2c-47ce-9699-92dfb289ad4f}</UniqueIdentifier>
     </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="OpenGL_project.rc" />
   </ItemGroup>
 </Project>

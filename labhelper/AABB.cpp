@@ -12,6 +12,12 @@ extent = vec3();
 }AABB::AABB()
 */
 
+AABB::AABB()
+{
+	center = vec3();
+	extent = vec3();
+}
+
 AABB::AABB(vec3 c, vec3 x)
 {
 	center = c;
