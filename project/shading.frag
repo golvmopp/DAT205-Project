@@ -13,6 +13,11 @@ uniform float material_fresnel;
 uniform float material_shininess;
 uniform float material_emission;
 
+uniform vec3 viewSpaceLightDir;
+uniform float spotInnerAngle;
+uniform float spotOuterAngle;
+uniform int texmapscale;
+
 uniform int has_emission_texture;
 uniform int has_color_texture;
 layout(binding = 0) uniform sampler2D colorMap;
@@ -24,6 +29,7 @@ layout(binding = 5) uniform sampler2D emissiveMap;
 layout(binding = 6) uniform sampler2D environmentMap;
 layout(binding = 7) uniform sampler2D irradianceMap;
 layout(binding = 8) uniform sampler2D reflectionMap;
+layout(binding = 10) uniform sampler2D shadowMapTex;
 uniform float environment_multiplier;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -43,6 +49,7 @@ uniform float point_light_intensity_multiplier = 50.0;
 in vec2 texCoord;
 in vec3 viewSpaceNormal;
 in vec3 viewSpacePosition;
+in vec4 shadowMapCoord;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Input uniform variables
@@ -108,48 +115,41 @@ vec3 calculateIndirectIllumination(vec3 wo, vec3 n)
 
 }
 
-///////////////////////////
-//MOTION BLUR CRAP
-///////////////////////////
-vec4 motionBlur(vec4 color) {
-
-	//Extract the per-pixel world-space positions
-	float zOverW = texture2D(colorMap, texCoord).z;
-	
-	vec4 H = vec4(texCoord.x * 2 - 1, (1 - texCoord.y) * 2 - 1, zOverW, 1.0);
-
-	vec4 D = viewInverse * H;
-
-	vec4 worldPos = D/D.w;
-
-	//comppute the per-pixel velocity
-
-	vec4 previousPos = previousViewProjectionMatrix * worldPos;
-
-	previousPos /= previousPos.w;
-
-	vec2 velocity = ((H - previousPos) / 2.0f).xy;
-
-
-	//Perform the motion blur
-	vec4 theColor = texture2D(colorMap, texCoord);
-	vec2 nextPos = texCoord + velocity;
-	int numSamples = 4;
-
-	for (int i = 1; i < numSamples; ++i, nextPos += velocity) {
-		vec4 currentColor = texture2D(colorMap, nextPos);
-		theColor += currentColor;
-	}
-
-	vec4 finalColor = theColor / numSamples;
-	return finalColor;
+vec4 textureRect(in sampler2D tex, vec2 rectangleCoord) {
+	return texture(tex, rectangleCoord / textureSize(tex, 0));
+}
+/*
+//PCF stuff
+vec3 offset_lookup(sampler2D map, vec4 loc, vec2 offset) {
+	return texture2DProj(map, vec4(gl_FragCoord.xy + offset * texmapscale * loc.w, 
+	loc.z, 
+	loc.w)).xyz;
 }
 
+float shadowCoeff() {
+	float sum = 0;
+	float x, y;
+
+	for (y = -1.5; y <= 1.5; y += 1.0) {
+		for (x = -1.5; x <= 1.5; x += 1.0) {
+			sum += offset_lookup(shadowMapTex, shadowMapCoord, vec2(x, y));
+		}
+	}
+	return sum / 16.0;
+}*/
 
 void main() 
 {
-	float visibility = 1.0;
+	float depth = texture(shadowMapTex, shadowMapCoord.xy / shadowMapCoord.w).x;
+	float visibility = (depth >= (shadowMapCoord.z / shadowMapCoord.w)) ? 1.0 : 0.0;
 	float attenuation = 1.0;
+
+	vec3 posToLight = normalize(viewSpaceLightPosition - viewSpacePosition);
+	float cosAngle = dot(posToLight, -viewSpaceLightDir);
+
+	//spotlight, smooth border
+	float spotAttenuation = smoothstep(spotOuterAngle, spotInnerAngle, cosAngle);
+	visibility *= spotAttenuation;
 
 	vec3 wo = -normalize(viewSpacePosition);
 	vec3 n = normalize(viewSpaceNormal);

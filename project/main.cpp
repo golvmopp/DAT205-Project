@@ -31,7 +31,7 @@ SDL_Window* g_window = nullptr;
 float currentTime  = 0.0f;
 float previousTime = 0.0f;
 float deltaTime    = 0.0f;
-bool showUI = false;
+bool showUI = true;
 int windowWidth, windowHeight;
 
 //car speed physics
@@ -46,7 +46,16 @@ float acceleration = 0.f;
 std::vector<FboInfo> fboList;
 // Samples for ambient occlusion
 glm::vec3 hemisphereSamples[16];
+glm::vec3 noiseTex[16];
+GLuint ssaoTex;
 
+// Shadow stuff
+FboInfo shadowMapFB;
+int shadowMapResolution = 512;
+float polygonOffset_factor = 1.0f;
+float polygonOffset_units = 0.8f;
+float innerSpotlightAngle = 20.f;
+float outerSpotlightAngle = 22.5f;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Shader programs
@@ -56,6 +65,7 @@ GLuint simpleShaderProgram; // Shader used to draw the shadow map
 GLuint backgroundProgram;
 GLuint postFXshader; //Shader for post processing effects
 GLuint cutoffShader, hBlurShader, vBlurShader, motionBlurShader;
+//FboInfo shadowMapFB;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Environment
@@ -139,12 +149,15 @@ void initGL()
 	// Load models and set up model matrices
 	///////////////////////////////////////////////////////////////////////
 	fighterModel = labhelper::loadModelFromOBJ("../scenes/box_ship.obj");
-	landingpadModel = labhelper::loadModelFromOBJ(	"../scenes/racetrack_flat.obj");
+	landingpadModel = labhelper::loadModelFromOBJ("../scenes/racetrack_basic.obj");
 	sphereModel = labhelper::loadModelFromOBJ("../scenes/sphere.obj");
 
 	roomModelMatrix = mat4(1.0f);
 	fighterModelMatrix = translate(15.0f * worldUp);
 	landingPadModelMatrix = mat4(1.0f);
+
+
+
 
 	///////////////////////////////////////////////////////////////////////
 	// Load environment map
@@ -169,16 +182,32 @@ void initGL()
 	}
 
 	///////////////////////////////////////////////////////////////////////
-	// Generate samples for ambient occlusion
+	// SSAO initialization
 	///////////////////////////////////////////////////////////////////////
+
+	//Generating the sample kernel
 	int nrSamples = 16;
 	for (int i = 0; i < nrSamples; i++) {
 		vec3 tmp = labhelper::cosineSampleHemisphere();
 		tmp = tmp * labhelper::randf();
+
+		//accelerating interpolation function (fewer samples away from origin)
 		hemisphereSamples[i] = tmp;
+		float scale = float(i) / float(nrSamples);
+		scale = mix(0.1f, 1.0f, scale * scale);
 	}
 
-	
+	//Generating the noise texture
+	for (int i = 0; i < nrSamples; ++i) {
+		noiseTex[i] = vec3(
+			labhelper::randf(),
+			labhelper::randf(),
+			0.0f
+			);
+		noiseTex[i] = normalize(noiseTex[i]);
+	}
+
+
 
 	glEnable(GL_DEPTH_TEST);	// enable Z-buffering 
 	glEnable(GL_CULL_FACE);		// enables backface culling
@@ -208,7 +237,16 @@ void drawBackground(const mat4 &viewMatrix, const mat4 &projectionMatrix)
 
 void drawScene(GLuint currentShaderProgram, const mat4 &viewMatrix, const mat4 &projectionMatrix, const mat4 &lightViewMatrix, const mat4 &lightProjectionMatrix)
 {
+
 	glUseProgram(currentShaderProgram);
+	//shadow mapping
+	mat4 lightMatrix = lightProjectionMatrix * lightViewMatrix * inverse(viewMatrix);
+	labhelper::setUniformSlow(currentShaderProgram, "lightMatrix", lightMatrix);
+	labhelper::setUniformSlow(currentShaderProgram, "viewSpaceLightDir", normalize(vec3(viewMatrix * vec4(-lightPosition, 0.0f))));
+	labhelper::setUniformSlow(currentShaderProgram, "spotOuterAngle", std::cos(radians(outerSpotlightAngle)));
+	labhelper::setUniformSlow(currentShaderProgram, "spotInnerAngle", std::cos(radians(innerSpotlightAngle)));
+	labhelper::setUniformSlow(currentShaderProgram, "texmapscale", shadowMapResolution);
+
 	// Light source
 	vec4 viewSpaceLightPosition = viewMatrix * vec4(lightPosition, 1.0f);
 	labhelper::setUniformSlow(currentShaderProgram, "point_light_color", point_light_color);
@@ -216,11 +254,11 @@ void drawScene(GLuint currentShaderProgram, const mat4 &viewMatrix, const mat4 &
 	labhelper::setUniformSlow(currentShaderProgram, "viewSpaceLightPosition", vec3(viewSpaceLightPosition));
 	labhelper::setUniformSlow(currentShaderProgram, "viewSpaceLightDir", normalize(vec3(viewMatrix * vec4(-lightPosition, 0.0f))));
 
+
+
 	// Hemisphere samples
 	labhelper::setUniformSlow(currentShaderProgram, "hemisphere_samples", 16, hemisphereSamples[0]);
 
-
-	
 	// Environment
 	labhelper::setUniformSlow(currentShaderProgram, "environment_multiplier", environment_multiplier);
 
@@ -247,7 +285,7 @@ void drawScene(GLuint currentShaderProgram, const mat4 &viewMatrix, const mat4 &
 /*
 	Applies the bloom filter and sends to render. Activates GL_BLEND
 */
-void bloom(int write) 
+void bloom(int write)
 {
 
 	//bright area cutoffs
@@ -271,7 +309,7 @@ void bloom(int write)
 
 	//vertically blurred horizontal blur, send to render.
 	//activates blending, resets color and depth buffers
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, fboList[4].framebufferId);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 
@@ -304,6 +342,10 @@ void display(void)
 				fboList[i].resize(w, h);
 			}
 		}
+		////especially for shadow
+		if (shadowMapFB.width != shadowMapResolution || shadowMapFB.height != shadowMapResolution) {
+			shadowMapFB.resize(shadowMapResolution, shadowMapResolution);
+		}
 	}
 
 	///////////////////////////////////////////////////////////////////////////
@@ -316,11 +358,12 @@ void display(void)
 
 	mat4 projMatrix = perspective(radians(45.0f), float(windowWidth) / float(windowHeight), 5.0f, 5000.0f);
 
-	mat4 viewMatrix = lookAt(cameraPosition, vec3(shipTranslation[3])*vec3(1.0f, 1.3f, 1.f), worldUp);
+	mat4 viewMatrix = lookAt(cameraPosition, vec3(shipTranslation[3])*vec3(1.0f, 1.2f, 1.f), worldUp);
 	
 
 	vec4 lightStartPosition = vec4(40.0f, 40.0f, 0.0f, 1.0f);
-	lightPosition = vec3(rotate(currentTime, worldUp) * lightStartPosition);
+	//lightPosition = vec3(rotate(currentTime, worldUp) * lightStartPosition); //rotating sun
+	lightPosition = vec3(lightStartPosition.x, lightStartPosition.y, lightStartPosition.z); //static sun
 	mat4 lightViewMatrix = lookAt(lightPosition, vec3(0.0f), worldUp);
 	mat4 lightProjMatrix = perspective(radians(45.0f), 1.0f, 25.0f, 100.0f);
 
@@ -342,7 +385,32 @@ void display(void)
 	glBindTexture(GL_TEXTURE_2D, irradianceMap);
 	glActiveTexture(GL_TEXTURE8);
 	glBindTexture(GL_TEXTURE_2D, reflectionMap);
+	
+	//Shadow stuff
+	glActiveTexture(GL_TEXTURE10);
+	glBindTexture(GL_TEXTURE_2D, shadowMapFB.depthBuffer);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	vec4 zeros(0.0f);
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, &zeros.x);
+	
 	glActiveTexture(GL_TEXTURE0);
+
+	// Shadow tomfoolery
+	glBindFramebuffer(GL_FRAMEBUFFER, shadowMapFB.framebufferId);
+	glViewport(0, 0, shadowMapFB.width, shadowMapFB.height);
+	glClearColor(0.2, 0.2, 0.8, 1.0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glEnable(GL_POLYGON_OFFSET_FILL);
+	glPolygonOffset(polygonOffset_factor, polygonOffset_units);
+
+	drawScene(shaderProgram, lightViewMatrix, lightProjMatrix, lightViewMatrix, lightProjMatrix);
+
+	glDisable(GL_POLYGON_OFFSET_FILL);
+
 
 	///////////////////////////////////////////////////////////////////////////
 	// Draw from camera   @ This draws the base scene to the first FBO
@@ -367,7 +435,17 @@ void display(void)
 
 	//Applies a bloom filter. Note that this activates GL_BLEND!
 	bloom(1);
-	
+
+	glBindFramebuffer(GL_FRAMEBUFFER, fboList[4].framebufferId);
+	glUseProgram(postFXshader);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, fboList[0].colorTextureTargets[0]);
+	labhelper::drawFullScreenQuad();
+
+
+	glDisable(GL_BLEND);
+
+	//motion-blur pass
 	glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D, fboList[0].depthBuffer);
 
@@ -379,11 +457,10 @@ void display(void)
 	labhelper::setUniformSlow(motionBlurShader, "viewProjectionInverse", inverse(projMatrix * viewMatrix));
 	glActiveTexture(GL_TEXTURE0);
 
-	glBindTexture(GL_TEXTURE_2D, fboList[0].colorTextureTargets[0]);
+	glBindTexture(GL_TEXTURE_2D, fboList[4].colorTextureTargets[0]);
 
 	labhelper::drawFullScreenQuad();
 
-	glDisable(GL_BLEND);
 
 
 	//variable to be used for motion blur
