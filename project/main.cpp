@@ -18,7 +18,7 @@ using namespace glm;
 #include <AABB.h>
 #include "hdr.h"
 #include "fbo.h"
-
+#include "BVH.h"
 
 using std::min;
 using std::max;
@@ -131,9 +131,9 @@ mid (-248.5, 42.5)
 
  AABB yesBox = AABB(vec3(-248.5f, 10.f, 42.5f), vec3(413.5f, 300.f, 22.5f));
 
-
  int noOfCheckpoints = 2;
  int nextCheckpoint = 1;
+
 
 void loadShaders(bool is_reload)
 {
@@ -143,7 +143,8 @@ void loadShaders(bool is_reload)
 	if (shader != 0) backgroundProgram = shader;
 	shader = labhelper::loadShaderProgram("shading.vert", "shading.frag", is_reload);
 	if (shader != 0) shaderProgram = shader;
-	}
+	
+}
 
 void initGL()
 {

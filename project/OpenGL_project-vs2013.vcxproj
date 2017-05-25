@@ -143,6 +143,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="movControl.cpp" />
     <ClCompile Include="ParticleSystem.cpp" />
+    <ClCompile Include="BVH.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="background.frag" />
@@ -169,9 +170,14 @@
     <ClInclude Include="..\labhelper\AABB.h" />
     <ClInclude Include="fbo.h" />
     <ClInclude Include="hdr.h" />
+    <ClInclude Include="BVH.h" />
     <ClInclude Include="movControl.h" />
     <ClInclude Include="heightfield.h" />
     <ClInclude Include="ParticleSystem.h" />
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="OpenGL_project.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
