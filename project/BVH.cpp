@@ -88,8 +88,12 @@ Node BVH::insert(labhelper::Model * model)
 		/* std::cout << value; ... */
 
 		for (int i = mesh.m_start_index; i < mesh.m_number_of_vertices + mesh.m_start_index; i++) {
-
+			// Loop through these vertices to find extreme points, create the "top" AABB from that.
 		}
+
+		// Split the top aabb into four, or 8 if we want non-flat tracks, check in each if there're any vertices,
+		// if there is that's a smaller AABB in the hierarchy, do the same with that as with the top one (split).
+		// if not, ignore. Stop the recursion
 
 	}
 

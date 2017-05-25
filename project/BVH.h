@@ -18,5 +18,4 @@ private:
 
 	void sync(unsigned int index);
 	AABB combine(AABB a, AABB b);
-
 };

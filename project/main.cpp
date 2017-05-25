@@ -128,7 +128,7 @@ inner corners:
 165, 10, -165
 mid (-413.5, -142.5)
 */
-
+ // Manual AABB "hierarchy" solution
  AABB walls[] = {
 	 AABB(vec3(-872.f, 10.f, -133.f), vec3(10.f, 10.f, 247.f)), 
 	 AABB(vec3(362.f, 10.f, -133.f), vec3(10.f, 10.f, 247.f)), 
@@ -644,7 +644,7 @@ bool checkCheckPoint(void)
 	}
 }
 
-
+// do something  general prefereably
 vec3 findDir(int i)
 {
 	vec3 v;
