@@ -110,7 +110,7 @@ mat4 shipTranslation = translate(vec3(0.f, 10.f, 0.f));
 mat4 shipRotation = mat4(1.0f);
 
 // AABB ship start, change the center of the AABB according to the position of the ship
- AABB shipBV = AABB(vec3(shipTranslation[3]), vec3(12.f, 10.f, 12.f));
+ AABB shipBV = AABB(vec3(shipTranslation[3]), vec3(2.f, 10.f, 2.f));
  AABB cps[] = {AABB(vec3(0.f, 10.f, 0.f), vec3(50.f, 50.f, 200.f)),
 			   AABB(vec3(-3615.f, 10.f, -1825.f), vec3(200.f, 50.f, 200.f)) };
 
@@ -126,10 +126,15 @@ inner corners:
 -662, 10, -120
 -662, 10, -165
 165, 10, -165
-mid (-248.5, 42.5)
+mid (-413.5, -142.5)
 */
 
- AABB yesBox = AABB(vec3(-248.5f, 10.f, 42.5f), vec3(413.5f, 300.f, 22.5f));
+ AABB walls[] = {
+	 AABB(vec3(-872.f, 10.f, -133.f), vec3(10.f, 10.f, 247.f)), 
+	 AABB(vec3(362.f, 10.f, -133.f), vec3(10.f, 10.f, 247.f)), 
+	 AABB(vec3(-255.f, 10.f, -380.f), vec3(617.f, 10.f, 10.f)),
+	 AABB(vec3(-255.f, 10.f, 114.f), vec3(617.f, 10.f, 10.f))
+ };
 
  int noOfCheckpoints = 2;
  int nextCheckpoint = 1;
@@ -640,17 +645,37 @@ bool checkCheckPoint(void)
 }
 
 
-vec3 findDir()
+vec3 findDir(int i)
 {
-	return vec3(1.f);
+	vec3 v;
+	switch (i)
+	{
+	case 0: 
+		v = vec3(1.f, 0.f, 0.f);
+		break;
+	case 1:
+		v = vec3(-1.f, 0.f, 0.f);
+		break;
+	case 2:
+		v = vec3(0.f, 0.f, 1.f);
+		break;
+	case 3:
+		v = vec3(0.f, 0.f, -1.f);
+		break;
+	default:
+		v = vec3(0.f);
+		break;
+	}
+	return v;
 }
 
 void checkCollisions(void)
 {
-	if (shipBV.intersect(yesBox)) {
-		//shipTranslation *= translate(findDir());
-		speed = 0;
-
+	for (int i = 0; i < (sizeof(walls) / sizeof(*walls)); i++) {
+		if (shipBV.intersect(walls[i])) {
+			shipTranslation[3] = translate(findDir(i)) * shipTranslation[3];
+			speed = 0;
+		}
 	}
 }
 
