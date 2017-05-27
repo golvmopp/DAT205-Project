@@ -52,6 +52,7 @@ GLuint ssaoTex;
 // Shadow stuff
 FboInfo shadowMapFB;
 int shadowMapResolution = 512;
+float texMapScale = 1.0 / (float)shadowMapResolution;
 float polygonOffset_factor = 1.0f;
 float polygonOffset_units = 0.8f;
 float innerSpotlightAngle = 20.f;
@@ -245,7 +246,7 @@ void drawScene(GLuint currentShaderProgram, const mat4 &viewMatrix, const mat4 &
 	labhelper::setUniformSlow(currentShaderProgram, "viewSpaceLightDir", normalize(vec3(viewMatrix * vec4(-lightPosition, 0.0f))));
 	labhelper::setUniformSlow(currentShaderProgram, "spotOuterAngle", std::cos(radians(outerSpotlightAngle)));
 	labhelper::setUniformSlow(currentShaderProgram, "spotInnerAngle", std::cos(radians(innerSpotlightAngle)));
-	labhelper::setUniformSlow(currentShaderProgram, "texmapscale", shadowMapResolution);
+	labhelper::setUniformSlow(currentShaderProgram, "texmapscale", texMapScale);
 
 	// Light source
 	vec4 viewSpaceLightPosition = viewMatrix * vec4(lightPosition, 1.0f);

@@ -16,7 +16,7 @@ uniform float material_emission;
 uniform vec3 viewSpaceLightDir;
 uniform float spotInnerAngle;
 uniform float spotOuterAngle;
-uniform int texmapscale;
+uniform float texmapscale;
 
 uniform int has_emission_texture;
 uniform int has_color_texture;
@@ -138,10 +138,24 @@ float shadowCoeff() {
 	return sum / 16.0;
 }*/
 
+float pcfblah() {
+	float sum = 0;
+	float x, y;
+	
+
+	for (y = -1.5; y <= 1.5; y += 1.0) {
+		for (x = -1.5; x <= 1.5; x += 1.0) {
+		float depth = texture(shadowMapTex, (shadowMapCoord.xy + (vec2(x,y) * texmapscale * shadowMapCoord.w)) / shadowMapCoord.w).x;
+			sum += (depth >= (shadowMapCoord.z / shadowMapCoord.w)) ? 1.0 : 0.0;
+		}
+	}
+	return sum / 16.0;
+}
+
 void main() 
 {
 	float depth = texture(shadowMapTex, shadowMapCoord.xy / shadowMapCoord.w).x;
-	float visibility = (depth >= (shadowMapCoord.z / shadowMapCoord.w)) ? 1.0 : 0.0;
+	float visibility = pcfblah();(depth >= (shadowMapCoord.z / shadowMapCoord.w)) ? 1.0 : 0.0;
 	float attenuation = 1.0;
 
 	vec3 posToLight = normalize(viewSpaceLightPosition - viewSpacePosition);
