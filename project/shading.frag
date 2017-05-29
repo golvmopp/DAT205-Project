@@ -16,7 +16,7 @@ uniform float material_emission;
 uniform vec3 viewSpaceLightDir;
 uniform float spotInnerAngle;
 uniform float spotOuterAngle;
-uniform int texmapscale;
+uniform float texmapscale;
 
 uniform int has_emission_texture;
 uniform int has_color_texture;
@@ -115,33 +115,25 @@ vec3 calculateIndirectIllumination(vec3 wo, vec3 n)
 
 }
 
-vec4 textureRect(in sampler2D tex, vec2 rectangleCoord) {
-	return texture(tex, rectangleCoord / textureSize(tex, 0));
-}
-/*
-//PCF stuff
-vec3 offset_lookup(sampler2D map, vec4 loc, vec2 offset) {
-	return texture2DProj(map, vec4(gl_FragCoord.xy + offset * texmapscale * loc.w, 
-	loc.z, 
-	loc.w)).xyz;
-}
-
-float shadowCoeff() {
+float pcf(float scale) {
 	float sum = 0;
 	float x, y;
+	float offset = scale/2 - 1;
 
-	for (y = -1.5; y <= 1.5; y += 1.0) {
-		for (x = -1.5; x <= 1.5; x += 1.0) {
-			sum += offset_lookup(shadowMapTex, shadowMapCoord, vec2(x, y));
+	for (y = -(0.5 + offset); y <= (0.5 + offset); y += 1.0) {
+		for (x = -(0.5 + offset); x <= (0.5 + offset); x += 1.0) {
+		float depth = texture(shadowMapTex, (shadowMapCoord.xy + (vec2(x,y) * texmapscale * shadowMapCoord.w)) / shadowMapCoord.w).x;
+			sum += (depth >= (shadowMapCoord.z / shadowMapCoord.w)) ? 1.0 : 0.0;
 		}
 	}
-	return sum / 16.0;
-}*/
+	return sum / (scale * scale);
+}
 
 void main() 
 {
 	float depth = texture(shadowMapTex, shadowMapCoord.xy / shadowMapCoord.w).x;
-	float visibility = (depth >= (shadowMapCoord.z / shadowMapCoord.w)) ? 1.0 : 0.0;
+	float visibility = pcf(6); // percentage closer filtering. only use even numbers
+	//float visibility = (depth >= (shadowMapCoord.z / shadowMapCoord.w)) ? 1.0 : 0.0; //traditional shadow maps
 	float attenuation = 1.0;
 
 	vec3 posToLight = normalize(viewSpaceLightPosition - viewSpacePosition);

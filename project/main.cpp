@@ -33,6 +33,7 @@ float previousTime = 0.0f;
 float deltaTime    = 0.0f;
 bool showUI = true;
 int windowWidth, windowHeight;
+bool hitHole = false;
 
 //car speed physics
 float speed = 0.f;
@@ -52,6 +53,7 @@ GLuint ssaoTex;
 // Shadow stuff
 FboInfo shadowMapFB;
 int shadowMapResolution = 512;
+float texMapScale = 1.0 / (float)shadowMapResolution;
 float polygonOffset_factor = 1.0f;
 float polygonOffset_units = 0.8f;
 float innerSpotlightAngle = 20.f;
@@ -112,7 +114,7 @@ mat4 shipRotation = mat4(1.0f);
 // AABB ship start, change the center of the AABB according to the position of the ship
  AABB shipBV = AABB(vec3(shipTranslation[3]), vec3(2.f, 10.f, 2.f));
  AABB cps[] = {AABB(vec3(0.f, 10.f, 0.f), vec3(50.f, 50.f, 200.f)),
-			   AABB(vec3(-3615.f, 10.f, -1825.f), vec3(200.f, 50.f, 200.f)) };
+			   AABB(vec3(-750.f, 10.f, -250.f), vec3(150.f, 50.f, 150.f)) };
 
  /*
 outer corners:
@@ -130,14 +132,16 @@ mid (-413.5, -142.5)
 */
  // Manual AABB "hierarchy" solution
  AABB walls[] = {
-	 AABB(vec3(-872.f, 10.f, -133.f), vec3(10.f, 10.f, 247.f)), 
-	 AABB(vec3(362.f, 10.f, -133.f), vec3(10.f, 10.f, 247.f)), 
-	 AABB(vec3(-255.f, 10.f, -380.f), vec3(617.f, 10.f, 10.f)),
-	 AABB(vec3(-255.f, 10.f, 114.f), vec3(617.f, 10.f, 10.f))
+	 AABB(vec3(-872.f, 10.f, -133.f), vec3(0.f, 10.f, 247.f)), 
+	 AABB(vec3(362.f, 10.f, -133.f), vec3(0.f, 10.f, 247.f)), 
+	 AABB(vec3(-255.f, 10.f, -380.f), vec3(617.f, 10.f, 0.f)),
+	 AABB(vec3(-255.f, 10.f, 114.f), vec3(617.f, 10.f, 0.f))
  };
 
  int noOfCheckpoints = 2;
  int nextCheckpoint = 1;
+
+ AABB hole = AABB(vec3(-248.5, 10.f, -142.5f), vec3(413.f, 100.f, 21.f));
 
 
 void loadShaders(bool is_reload)
@@ -268,7 +272,7 @@ void drawScene(GLuint currentShaderProgram, const mat4 &viewMatrix, const mat4 &
 	labhelper::setUniformSlow(currentShaderProgram, "viewSpaceLightDir", normalize(vec3(viewMatrix * vec4(-lightPosition, 0.0f))));
 	labhelper::setUniformSlow(currentShaderProgram, "spotOuterAngle", std::cos(radians(outerSpotlightAngle)));
 	labhelper::setUniformSlow(currentShaderProgram, "spotInnerAngle", std::cos(radians(innerSpotlightAngle)));
-	labhelper::setUniformSlow(currentShaderProgram, "texmapscale", shadowMapResolution);
+	labhelper::setUniformSlow(currentShaderProgram, "texmapscale", texMapScale);
 
 	// Light source
 	vec4 viewSpaceLightPosition = viewMatrix * vec4(lightPosition, 1.0f);
@@ -394,7 +398,10 @@ void display(void)
 	// Movement updates
 	///////////////////////////////////////////////////////////////////////////
 	shipTranslation[3] -= speed * shipRotation[0]; //speed update
-	//shipTranslation[2] -= speed * shipRotation[1]; //gravity
+	
+	if (hitHole) {
+		shipTranslation[3] -= speed*shipRotation[1]; // gravity
+	}
 
 	shipBV.move(vec3(shipTranslation[3]));
 	
@@ -469,7 +476,7 @@ void display(void)
 	glDisable(GL_BLEND);
 
 	//motion-blur pass
-	glActiveTexture(GL_TEXTURE2);
+	glActiveTexture(GL_TEXTURE6);
 	glBindTexture(GL_TEXTURE_2D, fboList[0].depthBuffer);
 
 	glBindFramebuffer(GL_FRAMEBUFFER_EXT, 0);
@@ -671,6 +678,10 @@ vec3 findDir(int i)
 
 void checkCollisions(void)
 {
+	if (shipBV.intersect(hole)) {
+		hitHole = true;
+	}
+
 	for (int i = 0; i < (sizeof(walls) / sizeof(*walls)); i++) {
 		if (shipBV.intersect(walls[i])) {
 			shipTranslation[3] = translate(findDir(i)) * shipTranslation[3];
@@ -704,6 +715,8 @@ int main(int argc, char *argv[])
 		display();
 		checkCollisions();
 
+		//collision detection
+		checkCollisions();
 		if (checkCheckPoint())
 		{
 			float lapTime = currentTime - lapStart;
