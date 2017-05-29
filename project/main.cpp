@@ -37,6 +37,7 @@ bool hitHole = false;
 
 //car speed physics
 float speed = 0.f;
+float downSpeed = 0.f;
 float velocity = 0.f;
 float dragCoeff = 0.25f;
 float dragForce = 0.f;
@@ -368,7 +369,9 @@ void display(void)
 
 	vec4 ref = vec4(10.f, 6.f, 0.f, 1.f);
 	vec4 tref = shipRotation * ref;
-	cameraPosition = vec3(tref + shipTranslation[3]);
+	if (!hitHole) {
+		cameraPosition = vec3(tref + shipTranslation[3]);
+	}
 
 	mat4 projMatrix = perspective(radians(45.0f), float(windowWidth) / float(windowHeight), 5.0f, 5000.0f);
 
@@ -387,7 +390,8 @@ void display(void)
 	shipTranslation[3] -= speed * shipRotation[0]; //speed update
 	
 	if (hitHole) {
-		shipTranslation[3] -= speed*shipRotation[1]; // gravity
+		downSpeed += 0.5f;
+		shipTranslation[3] -= downSpeed*0.1f*shipRotation[1]; // gravity
 	}
 
 	shipBV.move(vec3(shipTranslation[3]));
