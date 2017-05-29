@@ -447,7 +447,7 @@ void display(void)
 	glDisable(GL_BLEND);
 
 	//motion-blur pass
-	glActiveTexture(GL_TEXTURE2);
+	glActiveTexture(GL_TEXTURE6);
 	glBindTexture(GL_TEXTURE_2D, fboList[0].depthBuffer);
 
 	glBindFramebuffer(GL_FRAMEBUFFER_EXT, 0);
