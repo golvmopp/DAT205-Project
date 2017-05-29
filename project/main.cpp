@@ -33,6 +33,7 @@ float previousTime = 0.0f;
 float deltaTime    = 0.0f;
 bool showUI = true;
 int windowWidth, windowHeight;
+bool hitHole = false;
 
 //car speed physics
 float speed = 0.f;
@@ -114,8 +115,20 @@ mat4 shipRotation = mat4(1.0f);
  AABB shipBV = AABB(vec3(shipTranslation[3]), vec3(12.f, 10.f, 12.f));
  AABB cps[] = {AABB(vec3(0.f, 10.f, 0.f), vec3(50.f, 50.f, 200.f)),
 			   AABB(vec3(-3615.f, 10.f, -1825.f), vec3(200.f, 50.f, 200.f)) };
+
+
+ // Manual AABB "hierarchy" solution
+ AABB walls[] = {
+	 AABB(vec3(-872.f, 10.f, -133.f), vec3(10.f, 10.f, 247.f)),
+	 AABB(vec3(362.f, 10.f, -133.f), vec3(10.f, 10.f, 247.f)),
+	 AABB(vec3(-255.f, 10.f, -380.f), vec3(617.f, 10.f, 10.f)),
+	 AABB(vec3(-255.f, 10.f, 114.f), vec3(617.f, 10.f, 10.f))
+ };
+
  int noOfCheckpoints = 2;
  int nextCheckpoint = 1;
+
+ AABB hole = AABB(vec3(-248.5, 10.f, -142.5f), vec3(413.f, 100.f, 21.f));
 
 
 void loadShaders(bool is_reload)
@@ -372,7 +385,10 @@ void display(void)
 	// Movement updates
 	///////////////////////////////////////////////////////////////////////////
 	shipTranslation[3] -= speed * shipRotation[0]; //speed update
-	//shipTranslation[2] -= speed * shipRotation[1]; //gravity
+	
+	if (hitHole) {
+		shipTranslation[3] -= speed*shipRotation[1]; // gravity
+	}
 
 	shipBV.move(vec3(shipTranslation[3]));
 	
@@ -622,6 +638,45 @@ bool checkCheckPoint(void)
 	}
 }
 
+// do something  general prefereably
+vec3 findDir(int i)
+{
+	vec3 v;
+	switch (i)
+	{
+	case 0:
+		v = vec3(1.f, 0.f, 0.f);
+		break;
+	case 1:
+		v = vec3(-1.f, 0.f, 0.f);
+		break;
+	case 2:
+		v = vec3(0.f, 0.f, 1.f);
+		break;
+	case 3:
+		v = vec3(0.f, 0.f, -1.f);
+		break;
+	default:
+		v = vec3(0.f);
+		break;
+	}
+	return v;
+}
+
+void checkCollisions(void)
+{
+	if (shipBV.intersect(hole)) {
+		hitHole = true;
+	}
+
+	for (int i = 0; i < (sizeof(walls) / sizeof(*walls)); i++) {
+		if (shipBV.intersect(walls[i])) {
+			shipTranslation[3] = translate(findDir(i)) * shipTranslation[3];
+			speed = 0;
+		}
+	}
+}
+
 int main(int argc, char *argv[])
 {
 	g_window = labhelper::init_window_SDL("OpenGL Project");
@@ -646,6 +701,8 @@ int main(int argc, char *argv[])
 		// render to window
 		display();
 
+		//collision detection
+		checkCollisions();
 		if (checkCheckPoint())
 		{
 			float lapTime = currentTime - lapStart;
